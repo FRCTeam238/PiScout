@@ -76,7 +76,7 @@ class PiScout:
         # Next, we use the edges to find the contours of the shapes
         # Once the contours are found, we use approxPolyDP to resolve the contours into polygon approximations
         # If the polygons have 4 sides and are relatively large, save the center coordinates in sq[]
-        image, contours, hierarchy = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(edges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
         sq = []
         sqsize = []
         for cont in contours:
