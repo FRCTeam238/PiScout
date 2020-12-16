@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  
+	<xi:include href="head.xhtml" />
+	<body>
+	  <xi:include href="header.xhtml" /> 
+        <div id="body_bg">
+            <div class="container clearfix">
+                <div id="page_title" align="center">Login</div>
+                <div>
+                  <p style="color: #000; font-size: 40pt;">${result}</p>
+				  <p style="color: #000; font-size: 40pt;"><a py:if="referer" href="${referer}">Return to previous page</a></p>
+                </div>
+            </div>
+            <xi:include href="footer.html"/>
+        </div>
+        <div id="bottom_border"></div>
+    </body>
+</html>

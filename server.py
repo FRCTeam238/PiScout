@@ -285,9 +285,12 @@ class ScoutServer(object):
             cherrypy.session['auth'] = serverinfo.AUTH
             loginResult = "Admin Login successful"
 
-        with open('web/login.html', 'r') as file:
-            page = file.read()
-        return page.format(loginResult)
+        referrer=""
+        if 'Referer' in cherrypy.request.headers:
+            referer = cherrypy.request.headers['Referer']
+        tmpl = loader.load('login.xhtml')
+        page = tmpl.generate(result=loginResult, session=cherrypy.session, referer=referer)
+        return page.render('html', doctype='html')
 
         # Show a detailed summary for a given team
 
