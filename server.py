@@ -35,12 +35,16 @@ class ScoutServer(object):
         if e != '':
             if os.path.isfile('data_' + e + '.db'):
                 cherrypy.session['event'] = e
+                if 'Referer' in cherrypy.request.headers:
+                    raise cherrypy.HTTPRedirect(cherrypy.request.headers['Referer'])
         if 'event' not in cherrypy.session:
             cherrypy.session['event'] = CURRENT_EVENT
 
         # Handle mode selection. When the mode is changed, a POST request is sent here.
         if m != '':
             cherrypy.session['mode'] = m
+            if 'Referer' in cherrypy.request.headers:
+                raise cherrypy.HTTPRedirect(cherrypy.request.headers['Referer'])
         if 'mode' not in cherrypy.session:
             cherrypy.session['mode'] = DEFAULT_MODE
 
