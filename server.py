@@ -481,7 +481,7 @@ class ScoutServer(object):
         if not cherrypy.session['admin'] == serverinfo.ADMIN:
             raise cherrypy.HTTPError(401, "Not authorized to flag match data. Please log in and try again")
         if not (num.isdigit() and match.isdigit()):
-            return '<img src="http://goo.gl/eAs7JZ" style="width: 1200px"></img>'
+            raise cherrypy.HTTPError(400, "Team and match must be numeric")
         conn = sql.connect(self.datapath())
         conn.row_factory = sql.Row
         cursor = conn.cursor()
@@ -502,9 +502,15 @@ class ScoutServer(object):
         data = conn.cursor().execute('SELECT * FROM averages ORDER BY Team DESC').fetchall()
         for team in data:
             self.calcavg(team[0], self.getevent())
-        with open('web/recalculate.html', 'r') as file:
-            page = file.read()
-        return page
+
+        referrer = ""
+        if 'Referer' in cherrypy.request.headers:
+            referer = cherrypy.request.headers['Referer']
+        tmpl = loader.load('recalculate.xhtml')
+        page = tmpl.generate(session=cherrypy.session, referer=referer)
+        return page.render('html', doctype='html')
+
+
 
     # Input interface to choose teams to compare
     @cherrypy.expose()
