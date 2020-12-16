@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  
+	<xi:include href="head.xhtml" />
+	<body>
+	  <xi:include href="header.xhtml" /> 
+        <div id="body_bg">
+            <div class="container clearfix" align="center">
+                <div id="page_title" align="center">Compare Teams</div>
+                
+                <p class="main">Enter up to 4 teams</p>
+                <form method="get" action="teams">
+                    <div><input class="field" type="text" maxlength="4" name="n1" autocomplete="off"/></div>
+                    <div><input class="field" type="text" maxlength="4" name="n2" autocomplete="off"/></div>
+                    <div><input class="field" type="text" maxlength="4" name="n3" autocomplete="off"/></div>
+                    <div><input class="field" type="text" maxlength="4" name="n4" autocomplete="off"/></div>
+                    <button class="submit" type="submit">Submit</button>
+                </form>
+            </div>
+            <xi:include href="footer.html"/>
+        </div>
+        <div id="bottom_border"></div>
+    </body>
+</html>

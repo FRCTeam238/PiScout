@@ -510,23 +510,21 @@ class ScoutServer(object):
         page = tmpl.generate(session=cherrypy.session, referer=referer)
         return page.render('html', doctype='html')
 
-
-
     # Input interface to choose teams to compare
     @cherrypy.expose()
     def compareTeams(self):
         authCheck()
-        with open('web/compareTeams.html', 'r') as file:
-            page = file.read()
-        return page
+        tmpl = loader.load('compareTeams.xhtml')
+        page = tmpl.generate(session=cherrypy.session)
+        return page.render('html', doctype='html')
 
     # Input interface to choose alliances to compare
     @cherrypy.expose
     def compareAlliances(self):
         authCheck()
-        with open('web/compareAlliances.html', 'r') as file:
-            page = file.read()
-        return page
+        tmpl = loader.load('compareAlliances.xhtml')
+        page = tmpl.generate(session=cherrypy.session)
+        return page.render('html', doctype='html')
 
     # Output for team comparison
     @cherrypy.expose()

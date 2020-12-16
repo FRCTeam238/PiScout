@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  
+	<xi:include href="head.xhtml" />
+	<body>
+	  <xi:include href="header.xhtml" /> 
+        <div id="body_bg">
+            <div class="container clearfix" align="center">
+                <div id="page_title" align="center">Compare Alliances</div>
+                <p class="main">Enter two alliances</p>
+                <form method="get" action="alliances">
+                    <div id="alliance_compare_container">
+                        <div class="alliance_compare_cell">
+                            <p style="font-size: 36px; color: #0000B8;">Blue Alliance</p>
+                            <div><input class="field" type="text" maxlength="4" name="b1" autocomplete="off"/></div>
+                            <div><input class="field" type="text" maxlength="4" name="b2" autocomplete="off"/></div>
+                            <div><input class="field" type="text" maxlength="4" name="b3" autocomplete="off"/></div>
+                        </div>
+                        <div class="alliance_compare_cell">
+                            <p style="font-size: 36px; font-weight 900; margin: 0px 20px;">VS</p>
+                        </div>
+                        <div class="alliance_compare_cell">
+                            <p style="font-size: 36px; color: #B20000;">Red Alliance</p>
+                            <div><input class="field" type="text" maxlength="4" name="r1" autocomplete="off"/></div>
+                            <div><input class="field" type="text" maxlength="4" name="r2" autocomplete="off"/></div>
+                            <div><input class="field" type="text" maxlength="4" name="r3" autocomplete="off"/></div>
+                        </div>
+                    </div>
+                    <button class="submit" type="submit">Submit</button>
+                </form>
+                
+            </div>
+            <xi:include href="footer.html"/>
+        </div>
+        <div id="bottom_border"></div>
+    </body>
+</html>
