@@ -255,12 +255,14 @@ def calcTotals(entries):
     average = dict(AVERAGE_FIELDS)
     median = dict(AVERAGE_FIELDS)
     maxes = dict(AVERAGE_FIELDS)
+    trends = dict(AVERAGE_FIELDS)
     for key in sums:
         if key != 'Team':
             average[key] = round(np.mean(sums[key]), 2)
             median[key] = round(np.median(sums[key]), 2)
             maxes[key] = round(np.max(sums[key]), 2)
-    retVal = {'averages':average, 'median':median, 'maxes':maxes, 'noDefense':noDefense, 'lastThree':lastThree}
+            trends[key] = round(lastThree[key]-average[key], 2)
+    retVal = {'averages':average, 'median':median, 'maxes':maxes, 'noDefense':noDefense, 'lastThree':lastThree, 'trends':trends}
     
     #Calculate Proprietary metrics.
     for key in retVal:

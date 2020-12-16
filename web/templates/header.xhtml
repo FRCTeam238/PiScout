@@ -1,0 +1,93 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+	  py:strip="True">	
+	
+	<div id="page_header" class="hidden-xs hidden-sm">
+		<div class="container">
+			<img src="./static/img/default-logo.png" align="left" hspace="10" vspace="5"></img>
+			<span style="display:inline-block; padding-top:10px;">PiScout<br/>
+			FRC Team 238/2067</span>
+			<br clear="left"/>
+		</div>
+	</div>
+	
+	<div id="top_menu">
+		<div class="container">
+			<nav class="navbar navbar-inverse">
+				<div class="container-fluid">
+					<!-- Brand and toggle get grouped for better mobile display -->
+					<div class="navbar-header">
+						<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+							<span class="sr-only">Toggle navigation</span>
+							<span class="icon-bar"></span>
+							<span class="icon-bar"></span>
+							<span class="icon-bar"></span>
+						</button>
+					</div>
+					
+					<!-- Collect the nav links, forms, and other content for toggling -->
+					<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+						<ul class="nav navbar-nav">
+							<li class="active"><a href="index">Home <span class="sr-only">(current)</span></a></li>
+							<li class="dropdown">
+								<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Set Display<span class="caret"></span></a>
+								<ul class="dropdown-menu">
+									<li id="averages"><a href="?m=averages">Averages</a></li>
+									<li id="maxes"><a href="?m=maxes">Maxes</a></li>
+									<li id="noD"><a href="?m=noDefense">No-D</a></li>
+									<li id="last3"><a href="?m=lastThree">Last 3</a></li>
+									<li id="trends"><a href="?m=trends">Trends</a></li>
+								</ul>
+							</li>
+							<li class="dropdown">
+								<a href="#" class="dropdown-toggle hidden-sm" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Set Event<span class="caret"></span></a>
+								<ul class="dropdown-menu">
+									<li id="2019marea"><a href="?e=2019marea">North Shore</a></li>
+									<li id="2019nhdur"><a href="?e=2019nhdur">UNH</a></li>
+									<li id="2019necmp"><a href="?e=2019necmp">NE Champs</a></li>
+								</ul>
+							</li>
+							<li><a href="rankings">Rankings</a></li>
+							<li class="dropdown">
+								<a href="#" class="dropdown-toggle hidden-sm" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Compare<span class="caret"></span></a>
+								<ul class="dropdown-menu">
+									<li><a href="compareTeams">Teams</a></li>
+									<li><a href="compareAlliances">Alliances</a></li>
+								</ul>
+							</li>
+							<li class="dropdown">
+								<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Matches<span class="caret"></span></a>
+								<ul class="dropdown-menu">
+									<li><a href="matches?n=238">238 Matches</a></li>
+									<li><a href="matches">All Matches</a></li>
+								</ul>
+							</li>
+							<li><a href="edit" class="hidden-sm hidden-xs hidden-md">Edit</a></li>
+							<li><a href="recalculate" class="hidden-sm hidden-xs hidden-md">Recalculate</a></li>
+							<li><a href="picklist">Pick List</a></li>
+							<li class="dropdown">
+							  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Login<span class="caret"></span></a>
+							  <ul class="dropdown-menu">
+								<form method="post" action="login">
+								  <div class="form-group">
+									<input type="text" class="form-control" placeholder="Password" name="auth"/>
+								  </div>
+								  <button type="submit" class="btn btn-default">Submit</button>
+								</form>
+							  </ul>
+							</li>
+						</ul>
+						<form class="navbar-form navbar-left" method="get" action="team">
+							<div class="form-group">
+								<input type="text" class="form-control" placeholder="Team Number" name="n" maxlength="4"/>
+							</div>
+							<button type="submit" class="btn btn-default">Submit</button>
+						</form>
+					</div><!-- /.navbar-collapse -->
+				</div><!-- /.container-fluid -->
+			</nav>
+		</div>
+	</div>
+
+</html>

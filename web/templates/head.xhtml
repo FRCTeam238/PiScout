@@ -1,0 +1,29 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+	  py:strip="True">	
+	<head>
+	  <meta name="viewport" content="width=device-width, initial-scale=1.0,
+	  shrink-to-fit=no" />	  
+	  <meta charset="UTF-8" />
+
+	  <link rel="stylesheet" href="./static/bootstrap-3.3.7/css/bootstrap.min.css" />
+	<link href="./static/css/site.css" rel="stylesheet" type="text/css" />
+	<script src="./static/js/jquery.js"></script>
+	<script src="./static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
+	<script src="./static/js/jquery.tablesorter.js"></script>
+	<script>
+		$( document ).ready(function() {{
+			try{{
+				document.getElementById("${session['event']}").setAttribute("class", "active");
+			}}
+			catch(err){{}}
+			try{{
+				document.getElementById("${session['mode']}").setAttribute("class", "active");
+			}}
+			catch (err){{}}
+		}});
+	</script>
+	  <title py:content="title">Page Title</title>
+    </head>
+</html>

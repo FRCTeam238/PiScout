@@ -10,9 +10,14 @@ import gamespecific as game
 import serverinfo
 import sys
 import re
+from genshi.template import TemplateLoader
 
 DEFAULT_MODE = 'averages'
 localInstance = False;
+loader = TemplateLoader(
+    os.path.join(os.path.dirname(__file__), 'web/templates'),
+    auto_reload=True)
+
 
 class ScoutServer(object):
     # Make sure that database for current event exists on startup
@@ -43,78 +48,21 @@ class ScoutServer(object):
         table = ''
         conn = sql.connect(self.datapath())
         conn.row_factory = sql.Row
-        if cherrypy.session['mode'] == "trends":
-            sqlCommand = "SELECT * FROM averages ORDER BY Team DESC"
-            data = conn.cursor().execute(sqlCommand).fetchall()
-            conn.close()
-        else:
-            sqlCommand = "SELECT * FROM " + cherrypy.session['mode'] + " ORDER BY Team DESC"
-            data = conn.cursor().execute(sqlCommand).fetchall()
-            conn.close()
-        columns = len(game.AVERAGE_FIELDS)
-        #First generate a header for each column. There are two blocks, 1 for regular and 1 for mobile
-        for i,key in enumerate(game.AVERAGE_FIELDS):
-            if key != "Team":
-                table += '''
-                <th class="text-center hidden-xs col-sm-1 tablesorter-header tablesorter-headerUnSorted" data-column="{1}" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="{0}: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">{0}</div></th>
-                
-                <th class="titleColumn titleColumn{1} text-center hidden-sm hidden-md hidden-lg col-xs-3 tablesorter-header tablesorter-headerUnSorted hidden-xs" data-column="{1}" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none; display: none; color: #EEEE00;" aria-sort="none" aria-label="{0}: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">{0}</div></th>'''.format(key, i)
+        sqlCommand = "SELECT * FROM " + cherrypy.session['mode'] + " ORDER BY Team DESC"
+        data = conn.cursor().execute(sqlCommand).fetchall()
+        conn.close()
+
+        # Pass off the normal set of columns or columns with the hidden fields depending on authentication
         if cherrypy.session['auth'] == serverinfo.AUTH:
-          columns += len(game.HIDDEN_AVERAGE_FIELDS)
-          j = len(game.AVERAGE_FIELDS)
-          for i,key in enumerate(game.HIDDEN_AVERAGE_FIELDS):
-            table += '''
-            <th class="text-center hidden-xs col-sm-1 tablesorter-header tablesorter-headerUnSorted" data-column="{1}" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="{0}: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">{0}</div></th>
-            
-            <th class="titleColumn titleColumn{1} text-center hidden-sm hidden-md hidden-lg col-xs-3 tablesorter-header tablesorter-headerUnSorted hidden-xs" data-column="{1}" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none; display: none; color: #EEEE00;" aria-sort="none" aria-label="{0}: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">{0}</div></th>'''.format(key, i+j)
-        table += '''                            </tr>
-                        </thead>
-                        <tbody aria-live="polite" aria-relevant="all">'''
-        
-        #Generate a row for each team
-        for team in data:
-            table += '''
-                <tr role="row">
-                    <td><a href="team?n={0}">{0}</a></td>'''.format(int(team['Team']))
-            if cherrypy.session['mode'] == "trends":
-                conn = sql.connect(self.datapath())
-                conn.row_factory = sql.Row
-                lastThreeData = conn.cursor().execute('SELECT * FROM lastThree WHERE Team=?', (team['Team'],)).fetchone()
-                conn.close()
-                for i,key in enumerate(game.AVERAGE_FIELDS):
-                    if key!= 'Team':
-                        table += '''
-                            <td class="hidden-xs">{0}</td>
-                            <td class="rankingColumn rankColumn{1} hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">{0}</td>
-                            '''.format(round(lastThreeData[key]-team[key],2), i)
-            else:
-                for i,key in enumerate(game.AVERAGE_FIELDS):
-                    if key!= 'Team':
-                        table += '''
-                            <td class="hidden-xs">{0}</td>
-                            <td class="rankingColumn rankColumn{1} hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">{0}</td>
-                            '''.format(team[key], i)
-            if cherrypy.session['auth'] == serverinfo.AUTH:
-              j = len(game.AVERAGE_FIELDS)
-              if cherrypy.session['mode'] == "trends":
-                for i,key in enumerate(game.HIDDEN_AVERAGE_FIELDS):
-                    table += '''
-                        <td class="hidden-xs">{0}</td>
-                        <td class="rankingColumn rankColumn{1} hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">{0}</td>
-                        '''.format(round(lastThreeData[key]-team[key],2), i+j)
-              else:
-                  for i,key in enumerate(game.HIDDEN_AVERAGE_FIELDS):
-                    table += '''
-                        <td class="hidden-xs">{0}</td>
-                        <td class="rankingColumn rankColumn{1} hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">{0}</td>
-                        '''.format(team[key], i+j)
-            table += '''</tr>'''
-        
-        with open('web/index.html', 'r') as file:
-            page = file.read()
-        return page.format(table, cherrypy.session['event'], cherrypy.session['mode'], columns-3)
-        
-    #Page for creating picklist
+            columns = {**game.AVERAGE_FIELDS, **game.HIDDEN_AVERAGE_FIELDS}
+        else:
+            columns = game.AVERAGE_FIELDS
+
+        tmpl = loader.load('index.xhtml')
+        page = tmpl.generate(columns=columns, title="Home", session=cherrypy.session, data=data)
+        return page.render('html', doctype='html')
+
+    # Page for creating picklist
     @cherrypy.expose
     def picklist(self, m='', list='', dnp=''):
         if not cherrypy.session['auth'] == serverinfo.AUTH:
@@ -1058,6 +1006,7 @@ class ScoutServer(object):
         cursor.execute('DELETE FROM maxes WHERE Team=?', (n,))
         cursor.execute('DELETE FROM lastThree WHERE Team=?', (n,))
         cursor.execute('DELETE FROM noDefense WHERE Team=?', (n,))
+        cursor.execute('DELETE FROM trends WHERE Team=?', (n,))
 
         entries = cursor.execute('SELECT * FROM scout WHERE Team=? AND flag=0 ORDER BY Match DESC', (n,)).fetchall()
         # If match entries exist, calc stats and put into appropriate tables
@@ -1149,6 +1098,7 @@ class ScoutServer(object):
             cursor.execute('''CREATE TABLE lastThree ''' + tableCreate)
             cursor.execute('''CREATE TABLE noDefense ''' + tableCreate)
             cursor.execute('''CREATE TABLE median ''' + tableCreate)
+            cursor.execute('''CREATE TABLE trends''' + tableCreate)
             cursor.execute('''CREATE TABLE comments (team integer, comment text)''')
             conn.close()
         # next check for the global database
