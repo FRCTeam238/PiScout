@@ -11,57 +11,8 @@
 			<div class="container clearfix">
 				<div id="page_title" align="center" py:content="session['event']">PiScout</div>
 				<div id="table_container"> 		
-					<script>
-						$( document ).ready(function() {{
-							$('.titleColumn0').removeClass("hidden-xs");
-							$('.titleColumn0').show();
-							$('.rankColumn0').removeClass("hidden-xs");
-							$('.rankColumn0').show();
-							$('.titleColumn1').removeClass("hidden-xs");
-							$('.titleColumn1').show();
-							$('.rankColumn1').removeClass("hidden-xs");
-							$('.rankColumn1').show();
-							$('.titleColumn2').removeClass("hidden-xs");
-							$('.titleColumn2').show();
-							$('.rankColumn2').removeClass("hidden-xs");
-							$('.rankColumn2').show();
-							$('.titleColumn3').removeClass("hidden-xs");
-							$('.titleColumn3').show();
-							$('.rankColumn3').removeClass("hidden-xs");
-							$('.rankColumn3').show();
-							$('table').tablesorter({
-								sortList: [[1, 1]]
-							});
-						}});
-					</script>	
-					<script>
-						$(function () {{
-							var i = 1;
-							
-							$('.rotateButton').click(function () {{
-								$('.titleColumn').hide();
-								$('.rankingColumn').hide();
-								$('.titleColumn' + i).addClass("hidden-xs");
-								$('.rankColumn' + i).addClass("hidden-xs");
-								$('.titleColumn' + (i+1)).addClass("hidden-xs");
-								$('.rankColumn' + (i+1)).addClass("hidden-xs");
-								$('.titleColumn' + (i+2)).addClass("hidden-xs");
-								$('.rankColumn' + (i+2)).addClass("hidden-xs");
-								i++;
-								if (i > ${len(columns)-3}) {{
-									i = 1;
-								}}
-								$('.titleColumn' + i).removeClass("hidden-xs");
-								$('.titleColumn' + (i+1)).removeClass("hidden-xs");
-								$('.titleColumn' + (i+2)).removeClass("hidden-xs");
-								$('.rankColumn' + i).removeClass("hidden-xs");
-								$('.rankColumn' + (i+1)).removeClass("hidden-xs");
-								$('.rankColumn' + (i+2)).removeClass("hidden-xs");
-								$('.rankingColumn').show();
-								$('.titleColumn' ).show();
-							}});
-						}});
-					</script>        
+					<script src="./static/js/rotateColumns.js"></script>       
+					<input type="hidden" id="numColumns" value="${len(columns)}" />
 					<div class="row visible-xs">
 						<button type="button" class="btn btn-primary col-xs-offset-5 col-xs-4 rotateButton" style="font-size:11px;">Cycle Columns</button>
 					</div>
@@ -82,7 +33,12 @@
 											<td py:otherwise="" class="hidden-xs" >${team[key]}</td>
 									</py:choose>
 								</py:for>
-								<td py:for="i, key in enumerate(columns)" class="rankingColumn rankColumn${i} hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">${team[key]}</td>
+								<py:for each="i, key in enumerate(columns)">
+									<py:choose>
+											<td py:when="key=='Team'" class="rankingColumn rankColumn${i} hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;"><a href="team?n=${int(team[key])}">${int(team[key])}</a></td>
+											<td py:otherwise="" class="rankingColumn rankColumn${i} hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">${team[key]}</td>
+									</py:choose>
+								</py:for>
                             </tr>
 						</tbody>
 					</table>
