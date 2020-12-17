@@ -11,50 +11,15 @@
             <div class="container clearfix">
                 <div id="page_title" align="center">Rankings</div>
                 <div id="table_container">                
-                    <script>
-                        $(document).ready(function () {{
-                            $('table').tablesorter({{
-                                sortList: [[0, 0]]
-                            }});
-                        }});
-                    </script>
-
-                    <script>
-                        $(function () {{
-                            var i = 1;
-                            var j = 2;
-                            
-                            $('.rotateButton').click(function () {{
-                                $('.titleColumn' + i).addClass("hidden-xs");
-                                $('.rankColumn' + i).addClass("hidden-xs");
-                                i++;
-                                if (i > 3) {{
-                                    i = 1;
-                                }}
-                                $('.titleColumn').hide();
-                                $('.titleColumn' + i).removeClass("hidden-xs");
-                                $('.titleColumn' + i).show();
-                                j = i + 1;
-                                k = i + 2;
-                                $('.titleColumn' + j).removeClass("hidden-xs");
-                                $('.titleColumn' + j).show();
-                                $('.rankingColumn').hide();
-                                $('.rankColumn' + i).removeClass("hidden-xs");
-                                $('.rankColumn' + i).show();
-                                $('.rankColumn' + j).removeClass("hidden-xs");
-                                $('.rankColumn' + j).show();
-                            }});
-                            $('.titleColumn' + i).removeClass("hidden-xs");
-                            $('.titleColumn' + i).show();
-                            $('.rankColumn' + i).removeClass("hidden-xs");
-                            $('.rankColumn' + i).show();
-                            $('.titleColumn' + j).removeClass("hidden-xs");
-                            $('.titleColumn' + j).show();
-                            $('.rankColumn' + j).removeClass("hidden-xs");
-                            $('.rankColumn' + j).show();
-                        }});
-                    </script>
-
+                <script src="./static/js/rotateColumns.js"></script> 
+				<input type="hidden" id="numColumns" value="5" />
+				<script>
+				$( document ).ready(function() {
+					$('.tablesorter').tablesorter({
+						sortList: [[0, 0]]
+					});
+				});
+				</script>
                     <div class="row visible-xs">
                         <button type="button" class="btn btn-primary col-xs-offset-5 col-xs-4 rotateButton" style="font-size:11px;">Cycle Columns</button>
                     </div>
