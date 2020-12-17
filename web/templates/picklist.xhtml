@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  
+	<xi:include href="head.xhtml" />
+	<body>
+	  <xi:include href="header.xhtml" /> 
+        <div id="body_bg">
+            <div class="container clearfix">
+                <div id="page_title" align="center">Picklist - ${session['event']} - ${session['mode']}</div>
+                <div id="table_container">   
+					<script src="./static/js/jquery-ui.min.js"></script>
+					<script src="./static/js/jquery.ui.touch-punch.min.js"></script>
+					<script>
+						$(document).ready(function() {
+							$('.tablesorter').tablesorter({
+								sortList: [[1, 1]]
+							});
+							var auth = $("#auth").val()
+							if (auth == 'admin') {
+								$(".picklist").sortable({
+								  connectWith: "#main_table",
+								  update: function (event, ui) {
+									var order = $(this).sortable('serialize');
+									$.post('picklist', {'list': order});
+									$("#main_table").trigger('update');
+									}                  
+								}).disableSelection();
+								$(".dnp").sortable({
+								  connectWith: "#main_table",
+								  update: function (event, ui) {
+									var order = $(this).sortable('serialize');
+									$.post('picklist', {'dnp':order});
+									$("#main_table").trigger('update');
+									}
+								  }).disableSelection();
+								$("#main_table").sortable({
+								  connectWith: ".picklist, .dnp",
+								}).disableSelection();
+							}
+						});
+					</script>		
+					<script src="./static/js/rotateColumns.js"></script>       
+					<input type="hidden" id="numColumns" value="${len(columns)}" />			
+					<input type="hidden" id="auth" value="${auth}" />						
+                    <div class="row visible-xs">
+                        <button type="button" class="btn btn-primary col-xs-offset-5 col-xs-4 rotateButton" style="font-size:11px;">Cycle Columns</button>
+                    </div>
+					
+					<!--Picklist table-->
+                    <table class="table table-striped table-hover text-center" role="grid">
+						<thead>
+							<tr role="row" class="tablesorter-headerRow">								
+								<th py:for="i,title in enumerate(columns)" class="text-center hidden-xs col-sm-1 tablesorter-header tablesorter-headerUnSorted" data-column="${i}" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="${title}: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">${title}</div></th>
+								
+           
+								<th py:for="i,title in enumerate(columns)" class="titleColumn titleColumn${i} text-center hidden-sm hidden-md hidden-lg col-xs-3 tablesorter-header tablesorter-headerUnSorted hidden-xs" data-column="${i}" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none; display: none; color: #EEEE00;" aria-sort="none" aria-label="${title}: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">${title}</div></th>                   
+							</tr>
+						</thead>
+						<tbody class="picklist">
+							<tr py:for="team in picklist" id="team_${int(team['Team'])}">
+								<py:for each="key in columns">
+									<py:choose>
+											<td py:when="key=='Team'" class="hidden-xs"><a href="team?n=${int(team[key])}">${int(team[key])}</a></td>
+											<td py:otherwise="" class="hidden-xs" >${team[key]}</td>
+									</py:choose>
+								</py:for>
+								<py:for each="i, key in enumerate(columns)">
+									<py:choose>
+											<td py:when="key=='Team'" class="rankingColumn rankColumn${i} hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;"><a href="team?n=${int(team[key])}">${int(team[key])}</a></td>
+											<td py:otherwise="" class="rankingColumn rankColumn${i} hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">${team[key]}</td>
+									</py:choose>
+								</py:for>
+                            </tr>
+							<tr>
+							  <td id="team_0">Drop teams here</td>
+							</tr>
+						</tbody>
+                    </table>
+                   
+					<!--Main teams table-->
+                    <table class="table table-striped table-hover text-center tablesorter tablesorter-default" role="grid">
+                        <thead>
+							<tr role="row" class="tablesorter-headerRow">								
+								<th py:for="i,title in enumerate(columns)" class="text-center hidden-xs col-sm-1 tablesorter-header tablesorter-headerUnSorted" data-column="${i}" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="${title}: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">${title}</div></th>
+           
+								<th py:for="i,title in enumerate(columns)" class="titleColumn titleColumn${i} text-center hidden-sm hidden-md hidden-lg col-xs-3 tablesorter-header tablesorter-headerUnSorted hidden-xs" data-column="${i}" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none; display: none; color: #EEEE00;" aria-sort="none" aria-label="${title}: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">${title}</div></th>                   
+							</tr>
+						</thead>
+						<tbody id="main_table" aria-live="polite" aria-relevant="all">
+							<tr py:for="team in teams" id="team_${int(team['Team'])}">
+								<py:for each="key in columns">
+									<py:choose>
+											<td py:when="key=='Team'" class="hidden-xs"><a href="team?n=${int(team[key])}">${int(team[key])}</a></td>
+											<td py:otherwise="" class="hidden-xs" >${team[key]}</td>
+									</py:choose>
+								</py:for>
+								<py:for each="i, key in enumerate(columns)">
+									<py:choose>
+											<td py:when="key=='Team'" class="rankingColumn rankColumn${i} hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;"><a href="team?n=${int(team[key])}">${int(team[key])}</a></td>
+											<td py:otherwise="" class="rankingColumn rankColumn${i} hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">${team[key]}</td>
+									</py:choose>
+								</py:for>
+                            </tr>
+						</tbody>
+                    </table>
+					
+					<!--DNP List table-->
+                    <table class="table table-striped table-hover text-center" role="grid">
+						<thead>
+							<tr role="row" class="tablesorter-headerRow">								
+								<th py:for="i,title in enumerate(columns)" class="text-center hidden-xs col-sm-1 tablesorter-header tablesorter-headerUnSorted" data-column="${i}" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="${title}: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">${title}</div></th>
+           
+								<th py:for="i,title in enumerate(columns)" class="titleColumn titleColumn${i} text-center hidden-sm hidden-md hidden-lg col-xs-3 tablesorter-header tablesorter-headerUnSorted hidden-xs" data-column="${i}" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none; display: none; color: #EEEE00;" aria-sort="none" aria-label="${title}: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">${title}</div></th>                   
+							</tr>
+						</thead>
+						<tbody class="dnp">
+							<tr py:for="team in dnp" id="team_${int(team['Team'])}">
+								<py:for each="key in columns">
+									<py:choose>
+											<td py:when="key=='Team'" class="hidden-xs"><a href="team?n=${int(team[key])}">${int(team[key])}</a></td>
+											<td py:otherwise="" class="hidden-xs" >${team[key]}</td>
+									</py:choose>
+								</py:for>
+								<py:for each="i, key in enumerate(columns)">
+									<py:choose>
+											<td py:when="key=='Team'" class="rankingColumn rankColumn${i} hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;"><a href="team?n=${int(team[key])}">${int(team[key])}</a></td>
+											<td py:otherwise="" class="rankingColumn rankColumn${i} hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">${team[key]}</td>
+									</py:choose>
+								</py:for>
+                            </tr>
+						</tbody>
+                    </table>
+                </div>
+            </div>
+			<xi:include href="footer.html"/>
+        </div>
+        <div id="bottom_border"></div>
+    </body>
+</html>
