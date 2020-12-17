@@ -13,6 +13,13 @@
 				<div id="table_container"> 		
 					<script src="./static/js/rotateColumns.js"></script>       
 					<input type="hidden" id="numColumns" value="${len(columns)}" />
+					<script>
+					$( document ).ready(function() {
+						$('.tablesorter').tablesorter({
+							sortList: [[1, 1]]
+						});
+					});
+					</script>
 					<div class="row visible-xs">
 						<button type="button" class="btn btn-primary col-xs-offset-5 col-xs-4 rotateButton" style="font-size:11px;">Cycle Columns</button>
 					</div>
@@ -21,8 +28,7 @@
 							<tr role="row" class="tablesorter-headerRow">								
 								<th py:for="i,title in enumerate(columns)" class="text-center hidden-xs col-sm-1 tablesorter-header tablesorter-headerUnSorted" data-column="${i}" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="${title}: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">${title}</div></th>
            
-								<th py:for="i,title in enumerate(columns)" class="titleColumn titleColumn${i} text-center hidden-sm hidden-md hidden-lg col-xs-3 tablesorter-header tablesorter-headerUnSorted hidden-xs" data-column="${i}" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none; display: none; color: #EEEE00;" aria-sort="none" aria-label="${title}: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">${title}</div></th>
-									
+								<th py:for="i,title in enumerate(columns)" class="titleColumn titleColumn${i} text-center hidden-sm hidden-md hidden-lg col-xs-3 tablesorter-header tablesorter-headerUnSorted hidden-xs" data-column="${i}" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none; display: none; color: #EEEE00;" aria-sort="none" aria-label="${title}: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">${title}</div></th>                   
 							</tr>
 						</thead>
 						<tbody>

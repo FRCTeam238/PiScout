@@ -15,9 +15,6 @@ $( document ).ready(function() {{
 	$('.titleColumn3').show();
 	$('.rankColumn3').removeClass("hidden-xs");
 	$('.rankColumn3').show();
-	$('table').tablesorter({
-		sortList: [[1, 1]]
-	});
 }});
 
 $(function () {
