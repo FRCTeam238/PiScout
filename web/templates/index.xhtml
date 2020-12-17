@@ -9,7 +9,7 @@
 	  <xi:include href="header.xhtml" /> 
 		<div id="body_bg">
 			<div class="container clearfix">
-				<div id="page_title" align="center" py:content="session['event']">PiScout</div>
+				<div id="page_title" align="center">${session['event']} - ${session['mode']}</div>
 				<div id="table_container"> 		
 					<script src="./static/js/rotateColumns.js"></script>       
 					<input type="hidden" id="numColumns" value="${len(columns)}" />
