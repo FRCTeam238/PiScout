@@ -984,6 +984,136 @@ class ScoutServer(object):
         else:
             raise cherrypy.HTTPError(401, "Error: Not authorized to submit match data")
 
+    # Page for editing match data
+    @cherrypy.expose()
+    def edit(self, key='', **params):
+        datapath = 'data_' + self.getevent() + '.db'
+        conn = sql.connect(datapath)
+        conn.row_factory = sql.Row
+        cursor = conn.cursor()
+
+        if not cherrypy.session['auth'] == serverinfo.AUTH:
+            raise cherrypy.HTTPError(401, "Not authorized to edit match data. Please log in and try again")
+
+        # If there is data, this is a post and data should be used to update the entry
+        if len(params) > 1:
+            sqlCommand = 'UPDATE scout SET '
+            for name, value in params.items():
+                sqlCommand += name + '=' + (value if value else 'NULL') + " , "
+            sqlCommand = sqlCommand[:-2]
+            sqlCommand += 'WHERE key=' + str(key)
+            cursor.execute(sqlCommand)
+            conn.commit()
+            conn.close()
+            self.calcavg(params['Team'], self.getevent())
+
+        # Grab all match data entries from the event, with flagged entries first, then sorted by team, then match
+        conn = sql.connect(datapath)
+        conn.row_factory = sql.Row
+        cursor = conn.cursor()
+        entries = cursor.execute('SELECT * from scout ORDER BY flag DESC, Team ASC, Match ASC').fetchall()
+
+        if key == '':
+            key = entries[0][0]
+        combobox = ''
+
+        # Generate the entry selection dropdown, placing a * in front of flagged entries
+        for e in entries:
+            combobox += '''<option id="{0}" value="{0}">{1} Team {2}: Match {3}</option>\n'''.format(e['Key'], "*" if e[
+                'Flag'] else "", e['Team'], e['Match'])
+
+        # Grab the currently selected entry
+        entry = cursor.execute('SELECT * from scout WHERE key=?', (key,)).fetchone()
+        conn.close()
+
+        # Generate the Edit interface, with half the data on the left and half on the right
+        i = 0
+        leftEdit = ''
+        rightEdit = ''
+        for key in game.SCOUT_FIELDS:
+            if (key == 'Replay'):
+                continue
+            if (i < len(game.SCOUT_FIELDS) / 2):
+                leftEdit += '''<div><label for="team" class="editLabel">{0}</label>
+                            <input class="editNum" type="number" name="{0}" value="{1}"></div>'''.format(key,
+                                                                                                         entry[key])
+            else:
+                rightEdit += '''<div><label for="team" class="editLabel">{0}</label>
+                            <input class="editNum" type="number" name="{0}" value="{1}"></div>'''.format(key,
+                                                                                                         entry[key])
+            i = i + 1
+        with open('web/edit.html', 'r') as file:
+            page = file.read()
+        return page.format(combobox, entry['Team'], entry['Match'], entry['Key'], leftEdit, rightEdit)
+
+    # Page to show current rankings, and predict final rankings
+    @cherrypy.expose()
+    def rankings(self):
+        self.database_exists(self.getevent())
+        conn = sql.connect(self.datapath())
+        conn.row_factory = sql.Row
+        cursor = conn.cursor()
+
+        rankings = {}
+
+        # Grab latest rankings and match data from TBA
+        headers = {"X-TBA-Auth-Key": "n8QdCIF7LROZiZFI7ymlX0fshMBL15uAzEkBgtP1JgUpconm2Wf49pjYgbYMstBF"}
+        m = requests.get("http://www.thebluealliance.com/api/v3/event/{0}/matches".format(self.getevent()), params=headers)
+        r = requests.get("http://www.thebluealliance.com/api/v3/event/{0}/rankings".format(self.getevent()), params=headers)
+        if 'feed' in m:
+            raise cherrypy.HTTPError(503, "Unable to retrieve data about this event.")
+        if r.text != '[]':
+            r = r.json()
+        else:
+            raise cherrypy.HTTPError(503, "Unable to retrieve rankings data for this event.")
+        if m.text != '[]':
+            m = m.json()
+        else:
+            raise cherrypy.HTTPError(503, "Unable to retrieve match data for this event.")
+
+        # Process current rankings into dict
+        for item in r["rankings"]:
+            rankings[item["team_key"][3:]] = {'rp': round(item["sort_orders"][0] * item["matches_played"], 0),
+                                              'matchScore': item["sort_orders"][1],
+                                              'currentRP': round(item["sort_orders"][0] * item["matches_played"], 0),
+                                              'currentMatchScore': item["sort_orders"][1]}
+
+        # Iterate through all matches
+        for match in m:
+            if match['comp_level'] == 'qm':
+                # Un-played matches show a score of -1. Predict the outcome
+                if match['alliances']['blue']['score'] == -1:
+                    blueTeams = [match['alliances']['blue']['team_keys'][0][3:],
+                                 match['alliances']['blue']['team_keys'][1][3:],
+                                 match['alliances']['blue']['team_keys'][2][3:]]
+                    blueResult = game.predictScore(self.datapath(), blueTeams)
+                    blueRP = blueResult['RP1'] + blueResult['RP2']
+                    redTeams = [match['alliances']['red']['team_keys'][0][3:],
+                                match['alliances']['red']['team_keys'][1][3:],
+                                match['alliances']['red']['team_keys'][2][3:]]
+                    redResult = game.predictScore(self.datapath(), redTeams)
+                    redRP = redResult['RP1'] + redResult['RP2']
+                    if blueResult['score'] > redResult['score']:
+                        blueRP += 2
+                    elif redResult['score'] > blueResult['score']:
+                        redRP += 2
+                    else:
+                        redRP += 1
+                        blueRP += 1
+                    for team in blueTeams:
+                        rankings[team]['rp'] += blueRP
+                        rankings[team]['matchScore'] += blueResult['score']
+                    for team in redTeams:
+                        rankings[team]['rp'] += redRP
+                        rankings[team]['matchScore'] += redResult['score']
+
+        # Sort rankings, then output into table
+        sorted_rankings = sorted(rankings.items(), key=keyFromItem(lambda k, v: (v['rp'], v['matchScore'])), reverse=True)
+        tmpl = loader.load('rankings.xhtml')
+        page = tmpl.generate(rankings=sorted_rankings, session=cherrypy.session)
+        return page.render('html', doctype='html')
+
+
     # Calculates average scores for a team
     def calcavg(self, n, event):
         datapath = 'data_' + event + '.db'
@@ -1121,157 +1251,7 @@ class ScoutServer(object):
             globalconn.commit()
             globalconn.close()
 
-    # Page for editing match data
-    @cherrypy.expose()
-    def edit(self, key='', **params):
-        datapath = 'data_' + self.getevent() + '.db'
-        conn = sql.connect(datapath)
-        conn.row_factory = sql.Row
-        cursor = conn.cursor()
 
-        if not cherrypy.session['auth'] == serverinfo.AUTH:
-            raise cherrypy.HTTPError(401, "Not authorized to edit match data. Please log in and try again")
-
-        # If there is data, this is a post and data should be used to update the entry
-        if len(params) > 1:
-            sqlCommand = 'UPDATE scout SET '
-            for name, value in params.items():
-                sqlCommand += name + '=' + (value if value else 'NULL') + " , "
-            sqlCommand = sqlCommand[:-2]
-            sqlCommand += 'WHERE key=' + str(key)
-            cursor.execute(sqlCommand)
-            conn.commit()
-            conn.close()
-            self.calcavg(params['Team'], self.getevent())
-
-        # Grab all match data entries from the event, with flagged entries first, then sorted by team, then match
-        conn = sql.connect(datapath)
-        conn.row_factory = sql.Row
-        cursor = conn.cursor()
-        entries = cursor.execute('SELECT * from scout ORDER BY flag DESC, Team ASC, Match ASC').fetchall()
-
-        if key == '':
-            key = entries[0][0]
-        combobox = ''
-
-        # Generate the entry selection dropdown, placing a * in front of flagged entries
-        for e in entries:
-            combobox += '''<option id="{0}" value="{0}">{1} Team {2}: Match {3}</option>\n'''.format(e['Key'], "*" if e[
-                'Flag'] else "", e['Team'], e['Match'])
-
-        # Grab the currently selected entry
-        entry = cursor.execute('SELECT * from scout WHERE key=?', (key,)).fetchone()
-        conn.close()
-
-        # Generate the Edit interface, with half the data on the left and half on the right
-        i = 0
-        leftEdit = ''
-        rightEdit = ''
-        for key in game.SCOUT_FIELDS:
-            if (key == 'Replay'):
-                continue
-            if (i < len(game.SCOUT_FIELDS) / 2):
-                leftEdit += '''<div><label for="team" class="editLabel">{0}</label>
-                            <input class="editNum" type="number" name="{0}" value="{1}"></div>'''.format(key,
-                                                                                                         entry[key])
-            else:
-                rightEdit += '''<div><label for="team" class="editLabel">{0}</label>
-                            <input class="editNum" type="number" name="{0}" value="{1}"></div>'''.format(key,
-                                                                                                         entry[key])
-            i = i + 1
-        with open('web/edit.html', 'r') as file:
-            page = file.read()
-        return page.format(combobox, entry['Team'], entry['Match'], entry['Key'], leftEdit, rightEdit)
-
-    # Page to show current rankings, and predict final rankings
-    @cherrypy.expose()
-    def rankings(self):
-        event = self.getevent()
-        datapath = 'data_' + event + '.db'
-        self.database_exists(event)
-        conn = sql.connect(datapath)
-        conn.row_factory = sql.Row
-        cursor = conn.cursor()
-
-        rankings = {}
-
-        # Grab latest rankings and match data from TBA
-        headers = {"X-TBA-Auth-Key": "n8QdCIF7LROZiZFI7ymlX0fshMBL15uAzEkBgtP1JgUpconm2Wf49pjYgbYMstBF"}
-        m = requests.get("http://www.thebluealliance.com/api/v3/event/{0}/matches".format(event), params=headers)
-        r = requests.get("http://www.thebluealliance.com/api/v3/event/{0}/rankings".format(event), params=headers)
-        if 'feed' in m:
-            raise cherrypy.HTTPError(503, "Unable to retrieve data about this event.")
-        if r.text != '[]':
-            r = r.json()
-        else:
-            raise cherrypy.HTTPError(503, "Unable to retrieve rankings data for this event.")
-        if m.text != '[]':
-            m = m.json()
-        else:
-            raise cherrypy.HTTPError(503, "Unable to retrieve match data for this event.")
-
-        # Process current rankings into dict
-        for item in r["rankings"]:
-            rankings[item["team_key"][3:]] = {'rp': round(item["sort_orders"][0] * item["matches_played"], 0),
-                                              'matchScore': item["sort_orders"][1],
-                                              'currentRP': round(item["sort_orders"][0] * item["matches_played"], 0),
-                                              'currentMatchScore': item["sort_orders"][1]}
-
-        # Iterate through all matches
-        for match in m:
-            if match['comp_level'] == 'qm':
-                # Un-played matches show a score of -1. Predict the outcome
-                if match['alliances']['blue']['score'] == -1:
-                    blueTeams = [match['alliances']['blue']['team_keys'][0][3:],
-                                 match['alliances']['blue']['team_keys'][1][3:],
-                                 match['alliances']['blue']['team_keys'][2][3:]]
-                    blueResult = game.predictScore(self.datapath(), blueTeams)
-                    blueRP = blueResult['RP1'] + blueResult['RP2']
-                    redTeams = [match['alliances']['red']['team_keys'][0][3:],
-                                match['alliances']['red']['team_keys'][1][3:],
-                                match['alliances']['red']['team_keys'][2][3:]]
-                    redResult = game.predictScore(self.datapath(), redTeams)
-                    redRP = redResult['RP1'] + redResult['RP2']
-                    if blueResult['score'] > redResult['score']:
-                        blueRP += 2
-                    elif redResult['score'] > blueResult['score']:
-                        redRP += 2
-                    else:
-                        redRP += 1
-                        blueRP += 1
-                    for team in blueTeams:
-                        rankings[team]['rp'] += blueRP
-                        rankings[team]['matchScore'] += blueResult['score']
-                    for team in redTeams:
-                        rankings[team]['rp'] += redRP
-                        rankings[team]['matchScore'] += redResult['score']
-
-        # Sort rankings, then output into table
-        output = ''
-        for index, out in enumerate(
-                sorted(rankings.items(), key=keyFromItem(lambda k, v: (v['rp'], v['matchScore'])), reverse=True)):
-            output += '''
-            <tr role="row">
-                <td>{0}</td>
-                <td><a href="/team?n={1}">{1}</a></td>
-                <td class="hidden-xs">{2}</td>
-                <td class="hidden-xs">{3}</td>
-                <td class="hidden-xs">{4}</td>
-                <td class="hidden-xs">{5}</td>
-               
-
-                
-                <td class="rankingColumn rankColumn1 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">{2}</td>
-                <td class="rankingColumn rankColumn2 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">{3}</td>
-                <td class="rankingColumn rankColumn3 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">{4}</td>
-                <td class="rankingColumn rankColumn4 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">{5}</td>
-               
-            </tr>
-            '''.format(index + 1, out[0], (int)(out[1]['rp']), (int)(out[1]['matchScore']), (int)(out[1]['currentRP']),
-                       (int)(out[1]['currentMatchScore']))
-        with open('web/rankings.html', 'r') as file:
-            page = file.read()
-        return page.format(output)
         # END OF CLASS
 
 

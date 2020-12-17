@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  
+	<xi:include href="head.xhtml" />
+	<body>
+	  <xi:include href="header.xhtml" /> 
+        <div id="body_bg">
+            <div class="container clearfix">
+                <div id="page_title" align="center">Rankings</div>
+                <div id="table_container">                
+                    <script>
+                        $(document).ready(function () {{
+                            $('table').tablesorter({{
+                                sortList: [[0, 0]]
+                            }});
+                        }});
+                    </script>
+
+                    <script>
+                        $(function () {{
+                            var i = 1;
+                            var j = 2;
+                            
+                            $('.rotateButton').click(function () {{
+                                $('.titleColumn' + i).addClass("hidden-xs");
+                                $('.rankColumn' + i).addClass("hidden-xs");
+                                i++;
+                                if (i > 3) {{
+                                    i = 1;
+                                }}
+                                $('.titleColumn').hide();
+                                $('.titleColumn' + i).removeClass("hidden-xs");
+                                $('.titleColumn' + i).show();
+                                j = i + 1;
+                                k = i + 2;
+                                $('.titleColumn' + j).removeClass("hidden-xs");
+                                $('.titleColumn' + j).show();
+                                $('.rankingColumn').hide();
+                                $('.rankColumn' + i).removeClass("hidden-xs");
+                                $('.rankColumn' + i).show();
+                                $('.rankColumn' + j).removeClass("hidden-xs");
+                                $('.rankColumn' + j).show();
+                            }});
+                            $('.titleColumn' + i).removeClass("hidden-xs");
+                            $('.titleColumn' + i).show();
+                            $('.rankColumn' + i).removeClass("hidden-xs");
+                            $('.rankColumn' + i).show();
+                            $('.titleColumn' + j).removeClass("hidden-xs");
+                            $('.titleColumn' + j).show();
+                            $('.rankColumn' + j).removeClass("hidden-xs");
+                            $('.rankColumn' + j).show();
+                        }});
+                    </script>
+
+                    <div class="row visible-xs">
+                        <button type="button" class="btn btn-primary col-xs-offset-5 col-xs-4 rotateButton" style="font-size:11px;">Cycle Columns</button>
+                    </div>
+                    <table class="table table-striped table-hover text-center tablesorter tablesorter-default" role="grid">
+                        <thead>
+                            <tr role="row" class="tablesorter-headerRow">
+                                <th class="col-xs-3 col-sm-1 tablesorter-header tablesorter-headerAsc text-center" data-column="0" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-sort="ascending" aria-label="Team: Ascending sort applied, activate to apply a descending sort"><div class="tablesorter-header-inner">Rank</div></th>
+                                <th class="col-xs-3 col-sm-1 tablesorter-header tablesorter-headerAsc text-center" data-column="1" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-sort="ascending" aria-label="Team: Ascending sort applied, activate to apply a descending sort"><div class="tablesorter-header-inner">Team</div></th>
+
+                                <th class="text-center hidden-xs col-sm-1 tablesorter-header tablesorter-headerUnSorted" data-column="2" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="RP: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">RP</div></th>
+                                <th class="text-center hidden-xs col-sm-1 tablesorter-header tablesorter-headerUnSorted" data-column="3" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="Match Score: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Match Score</div></th>
+                                <th class="text-center hidden-xs col-sm-1 tablesorter-header tablesorter-headerUnSorted" data-column="4" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="Current RP: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Current RP</div></th>
+                                <th class="text-center hidden-xs col-sm-1 tablesorter-header tablesorter-headerUnSorted" data-column="5" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="Current Match Score: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Current Match Score</div></th>
+
+                                <th class="titleColumn titleColumn1 text-center hidden-sm hidden-md hidden-lg col-xs-3 tablesorter-header tablesorter-headerUnSorted hidden-xs" data-column="6" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none; display: none; color: #EEEE00;" aria-sort="none" aria-label="RP: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">RP</div></th>
+                                <th class="titleColumn titleColumn2 text-center hidden-sm hidden-md hidden-lg col-xs-3 tablesorter-header tablesorter-headerUnSorted hidden-xs" data-column="7" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none; color: #EEEE00; display: none;" aria-sort="none" aria-label="Match Score: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Match Score</div></th>
+                                <th class="titleColumn titleColumn3 text-center hidden-sm hidden-md hidden-lg col-xs-3 tablesorter-header tablesorter-headerUnSorted hidden-xs" data-column="8" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none; color: #EEEE00; display: none;" aria-sort="none" aria-label="Current RP: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Current RP</div></th>
+                                <th class="titleColumn titleColumn4 text-center hidden-sm hidden-md hidden-lg col-xs-3 tablesorter-header tablesorter-headerUnSorted hidden-xs" data-column="9" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none; color: #EEEE00; display: none;" aria-sort="none" aria-label="Current Match Score: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Current Match Score</div></th>
+                                
+
+                            </tr>
+                        </thead>
+                        <tbody aria-live="polite" aria-relevant="all">
+							<tr py:for="index, team in enumerate(rankings)">
+								<td>${index+1}</td>
+								<td><a href="/team?n=${team[0]}">${team[0]}</a></td>
+								<td class="hidden-xs">${(int)(team[1]['rp'])}</td>
+								<td class="hidden-xs">${(int)(team[1]['matchScore'])}</td>
+								<td class="hidden-xs">${(int)(team[1]['currentRP'])}</td>
+								<td class="hidden-xs">${(int)(team[1]['currentMatchScore'])}</td>
+
+								<td class="rankingColumn rankColumn1 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">${(int)(team[1]['rp'])}</td>
+								<td class="rankingColumn rankColumn2 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">${(int)(team[1]['matchScore'])}</td>
+								<td class="rankingColumn rankColumn3 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">${(int)(team[1]['currentRP'])}</td>
+								<td class="rankingColumn rankColumn4 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">${(int)(team[1]['currentMatchScore'])}</td>
+							</tr>
+                            <!--Sample data
+                            <tr role="row">
+                                <td>1</td>
+                                <td><a href="/2017/team/1058">1058</a></td>
+                                <td class="hidden-xs">2.70</td>
+                                <td class="hidden-xs">3,449</td>
+                                <td class="hidden-xs">844</td>
+                                <td class="hidden-xs">1,740</td>
+                               
+
+                                
+                                <td class="rankingColumn rankColumn1 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">2.70</td>
+                                <td class="rankingColumn rankColumn2 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">3,449</td>
+                                <td class="rankingColumn rankColumn3 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">844</td>
+                                <td class="rankingColumn rankColumn4 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">1,740</td>
+                               
+                            </tr>
+                            <tr role="row">
+                                <td>2</td>
+                                <td><a href="/2017/team/225">225</a></td>
+                                <td class="hidden-xs">2.70</td>
+                                <td class="hidden-xs">3,395</td>
+                                <td class="hidden-xs">824</td>
+                                <td class="hidden-xs">1,480</td>
+
+                                <td class="rankingColumn rankColumn1 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">2.70</td>
+                                <td class="rankingColumn rankColumn2 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">2.70</td>
+                                <td class="rankingColumn rankColumn3 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">3,395</td>
+                                <td class="rankingColumn rankColumn4 hidden-sm hidden-md hidden-lg hidden-xs" style="display: none;">824</td>
+                                
+
+                            </tr>
+                            -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <xi:include href="footer.html"/>
+        </div>
+        <div id="bottom_border"></div>
+    </body>
+</html>
