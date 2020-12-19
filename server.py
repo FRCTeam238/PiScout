@@ -27,7 +27,6 @@ class ScoutServer(object):
     # Home page
     @cherrypy.expose
     def index(self, m='', e=''):
-
         # Add auth value to session if not present
         authCheck()
 
@@ -170,9 +169,9 @@ class ScoutServer(object):
         else:
             pit = 0
 
-        statbox = ""
         # If we have less than 4 entries, see if we can grab data from a previous event
         lastEvent = 0
+        oldAverages = []
         if (len(entries) < 4):
             globalconn = sql.connect('global.db')
             globalconn.row_factory = sql.Row
@@ -189,103 +188,27 @@ class ScoutServer(object):
                 oldconn = sql.connect('data_' + lastEventCode + '.db')
                 oldconn.row_factory = sql.Row
                 oldcursor = oldconn.cursor()
-                oldAverages = oldcursor.execute('SELECT * FROM averages WHERE Team=?', (n,)).fetchall()
-                assert len(oldAverages) < 2  # ensure there aren't two entries for one team
-                if len(oldAverages):
-                    oldData = oldAverages[0]
-                    statbox += '''<div class="comparebox_container">
-                  <p style="font-size: 32px;">Last Event - {0}</p>
-                  <div class="statbox_container">
-                      <div id="stats">'''.format(n)
-                    for key in game.AVERAGE_FIELDS:
-                        if (key != 'Team'):
-                            statbox += '''<p class="statbox">{0}: {1}</p>'''.format(key, oldData[key])
-                    if cherrypy.session['auth'] == serverinfo.AUTH:
-                        for key in game.HIDDEN_AVERAGE_FIELDS:
-                            statbox += '''<p class="statbox">{0}: {1}</p>'''.format(key, oldData[key])
-                    statbox += '''       </div>
-                                  </div>
-                               </div>'''
+                oldAverages = oldcursor.execute('SELECT * FROM averages WHERE Team=?', (n,)).fetchone()
             except:
-                pass  # swallow the error
+                pass
 
-        # Generate Statbox
-        statbox += '''<div class="comparebox_container">
-                    <p style="font-size: 32px;">This Event</a></p>
-                    <div class="statbox_container">
-                        <div id="stats">'''.format(n)
-        for key in game.AVERAGE_FIELDS:
-            if (key != 'Team'):
-                statbox += '''<p class="statbox">{0}: {1}</p>'''.format(key, averages[key])
-        if cherrypy.session['auth'] == serverinfo.AUTH:
-            for key in game.HIDDEN_AVERAGE_FIELDS:
-                statbox += '''<p class="statbox">{0}: {1}</p>'''.format(key, averages[key])
-        statbox += '''       </div>
-                        </div>
-                     </div>'''
-
-        # If logged in, display pit scout data
-        if cherrypy.session['auth'] == serverinfo.AUTH:
-            if (pit):
-                statbox += '''<div class="comparebox_container">
-                    <p><a href="/team?n={0}" style="font-size: 32px;">Pit Scout</a></p>
-                    <div class="statbox_container">
-                        <div id="stats">'''
-                for key in game.PIT_SCOUT_FIELDS:
-                    if (key != 'Team') and (pit[key] != 0):
-                        statbox += '''<p class="statbox">{0}: {1}</p>'''.format(key, pit[key])
-                statbox += '''       </div>
-                        </div>
-                     </div>'''
-
-        # Generate html for comments section
-        commentstr = ''
-        if cherrypy.session['auth'] == serverinfo.AUTH:
-            for comment in comments:
-                commentstr += '<div class="commentbox"><p>{0}</p></div>'.format(comment[1])
-
-        output = ''
-
-        teamChart = ''
-        colors = ["#FF0000", "#000FFF", "#1DD300", "#C100E3", "#AF0000", "#000666", "#0D5B000", "#610172"]
-
-        for index, field in enumerate(game.CHART_FIELDS):
-            if field != 'match':
-                teamChart += '''// GRAPH
-                graph{0} = new AmCharts.AmGraph();
-                graph{0}.title = "{1}";
-                graph{0}.valueAxis = valueAxis;
-                graph{0}.type = "smoothedLine"; // this line makes the graph smoothed line.
-                graph{0}.lineColor = "{2}";
-                graph{0}.bullet = "round";
-                graph{0}.bulletSize = 8;
-                graph{0}.bulletBorderColor = "#FFFFFF";
-                graph{0}.bulletBorderAlpha = 1;
-                graph{0}.bulletBorderThickness = 2;
-                graph{0}.lineThickness = 2;
-                graph{0}.valueField = "{1}";
-                graph{0}.balloonText = "{1}<br><b><span style='font-size:14px;'>[[value]]</span></b>";
-                chart.addGraph(graph{0});
-                '''.format(index, field, colors[index])
+        # Clear out comments if not logged in
+        if cherrypy.session['auth'] != serverinfo.AUTH:
+            comments = []
 
         dataset = []
+        tableData = []
         for e in entries:
             # Generate chart data and table text for this match entry
             dp = game.generateChartData(e)
             text = game.generateTeamText(e)
-
-            # Generate a row in the table for each match
-            output += '''
-            <tr role="row" {5}>
-                <td>{0}</td>
-                <td>{1}</td>
-                <td>{2}</td>
-                <td>{3}</td>
-                <td>{4}</td>
-                <td><a class="flag" href="javascript:flag({6},{7});">X</a></td>
-                <td class="hidden-xs"><a class="edit" href="/edit?key={8}">E</a></td>
-            </tr>'''.format(e['Match'], *text.values(), 'style="color: #B20000"' if e['Flag'] else '', e['Match'],
-                            e['Flag'], e['Key'])
+            tableEntry = {}
+            tableEntry['Match'] = e['Match']
+            tableEntry['Text'] = text
+            tableEntry['Flag'] = e['Flag']
+            tableEntry['FlagAttr'] = [("style", "color: #B20000")] if e['Flag'] else ""
+            tableEntry['Key'] = e['Key']
+            tableData.append(tableEntry)
             for key, val in dp.items():
                 dp[key] = round(val, 2)
             if not e['Flag']:
@@ -293,36 +216,39 @@ class ScoutServer(object):
         dataset.reverse()  # reverse data so that graph is in the correct order
 
         # Grab the image from the blue alliance
-        imcode = ''
         headers = {"X-TBA-Auth-Key": "n8QdCIF7LROZiZFI7ymlX0fshMBL15uAzEkBgtP1JgUpconm2Wf49pjYgbYMstBF"}
         m = []
         try:
             # get the picture for a given team
-            m = self.get("http://www.thebluealliance.com/api/v3/team/frc{0}/media/2019".format(n),
+            m = self.get("http://www.thebluealliance.com/api/v3/team/frc{0}/media/2018".format(n),
                          params=headers).json()
             if m.status_code == 400:
                 m = []
         except:
             pass  # swallow the error
+        image_url = ""
         for media in m:
-            if media['type'] == 'imgur':  # check if there's an imgur image on TBA
-                imcode = '''<br>
-                <div style="text-align: center">
-                <p style="font-size: 32px;">Image</p>
-                <img src=http://i.imgur.com/{}.jpg></img>
-                </div>'''.format(media['foreign_key'])
+            #media['type'] == 'instagram-image' does not currently work correctly on TBA
+            if media['type'] == 'imgur':
+                image_url = media['view_url'] + "m.jpg"
                 break
-            if media['type'] == 'cdphotothread':
-                imcode = '''<br>
-                <div style="text-align: center">
-                <p style="font-size: 32px;">Image</p>
-                <img src=http://chiefdelphi.com/media/img/{}></img>
-                </div>'''.format(media['details']['image_partial'].replace('_l', '_m'))
+            elif media['type'] == 'cdphotothread':
+                image_url = media['direct_url']
                 break
 
-        with open('web/team.html', 'r') as file:
-            page = file.read()
-        return page.format(n, output, statbox, str(dataset).replace("'", '"'), imcode, commentstr, teamChart)
+        if(cherrypy.session['auth'] == serverinfo.AUTH):
+            auth = 1
+            columns = {**game.AVERAGE_FIELDS, **game.HIDDEN_AVERAGE_FIELDS}
+        else:
+            auth = 0
+            columns = game.AVERAGE_FIELDS
+
+        tmpl = loader.load('team.xhtml')
+        page = tmpl.generate(session=cherrypy.session, chartData=str(dataset).replace("'", '"'), image=image_url, \
+                             auth=auth, old_averages=oldAverages, pitColumns=game.PIT_SCOUT_FIELDS, pitScout=pit, \
+                             columns=columns, averages=averages, comments=comments, chartFields=game.CHART_FIELDS, \
+                             matches=tableData)
+        return page.render('html', doctype='html')
 
     # Called to toggle flag on a data entry. Also does a recalc to add/remove entry from stats
     @cherrypy.expose()
@@ -961,7 +887,6 @@ class ScoutServer(object):
         tmpl = loader.load('rankings.xhtml')
         page = tmpl.generate(rankings=sorted_rankings, session=cherrypy.session)
         return page.render('html', doctype='html')
-
 
     # Calculates average scores for a team
     def calcavg(self, n, event):

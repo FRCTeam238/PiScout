@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  
+	<xi:include href="head.xhtml" />
+	<body>
+		<xi:include href="header.xhtml" /> 
+		<div id="body_bg">
+				<script src="./static/js/amcharts.js"></script>
+				<script src="./static/js/serial.js"></script>
+		        <script>
+					var chart;
+					var graph;
+
+					var chartData = ${chartData}
+					
+					let color = ["#FF0000", "#000FFF", "#1DD300", "#C100E3", "#AF0000", "#000666", "#0D5B000", "#610172"]
+					
+					//Sample data[{{"match": 9, "autoshoot": 20.0, "shoot": 40.0, "autogears": 1, "gears": 4, "geardrop": 1}}, {{"match": 22, "autoshoot": 24.0, "shoot": 23.33, "autogears": 1, "gears": 2, "geardrop": 0}}, {{"match": 40, "autoshoot": 36.0, "shoot": 25.0, "autogears": 0, "gears": 3, "geardrop": 0}}, {{"match": 51, "autoshoot": 0.0, "shoot": 45.0, "autogears": 0, "gears": 0, "geardrop": 0}}, {{"match": 71, "autoshoot": 43.0, "shoot": 23.33, "autogears": 1, "gears": 2, "geardrop": 0}}, {{"match": 91, "autoshoot": 35.0, "shoot": 30.0, "autogears": 1, "gears": 3, "geardrop": 0}}, {{"match": 96, "autoshoot": 0.0, "shoot": 0.0, "autogears": 1, "gears": 2, "geardrop": 0}}, {{"match": 107, "autoshoot": 0.0, "shoot": 60.0, "autogears": 1, "gears": 0, "geardrop": 0}}];
+
+					AmCharts.ready(function () {
+						// SERIAL CHART
+						chart = new AmCharts.AmSerialChart();
+
+						chart.dataProvider = chartData;
+						chart.marginLeft = 10;
+						chart.categoryField = "match";
+
+						// AXES
+						// category
+						var categoryAxis = chart.categoryAxis;
+						categoryAxis.dashLength = 3;
+						categoryAxis.minorGridEnabled = true;
+						categoryAxis.minorGridAlpha = 0.1;
+
+						// value
+						var valueAxis = new AmCharts.ValueAxis();
+						valueAxis.position = "left";
+						valueAxis.axisColor = "#111111";
+						valueAxis.gridAlpha = 0;
+						valueAxis.axisThickness = 2;
+						chart.addValueAxis(valueAxis)
+
+						var valueAxis2 = new AmCharts.ValueAxis();
+						valueAxis2.position = "right";
+						valueAxis2.axisColor = "#FCD202";
+						valueAxis2.gridAlpha = 0;
+						valueAxis2.axisThickness = 2;
+						chart.addValueAxis(valueAxis2);
+
+						// GRAPHS
+						<py:for each="index, field in enumerate(chartFields)">
+							<py:if test="field != 'match'">
+								// GRAPH
+								graph${index} = new AmCharts.AmGraph();
+								graph${index}.title = "${field}";
+								graph${index}.valueAxis = valueAxis;
+								graph${index}.type = "smoothedLine"; // this line makes the graph smoothed line.
+								graph${index}.lineColor = color[${index-1}];
+								graph${index}.bullet = "round";
+								graph${index}.bulletSize = 8;
+								graph${index}.bulletBorderColor = "#FFFFFF";
+								graph${index}.bulletBorderAlpha = 1;
+								graph${index}.bulletBorderThickness = 2;
+								graph${index}.lineThickness = 2;
+								graph${index}.valueField = "${field}";
+								graph${index}.balloonText = "${field}: [[value]]";
+								chart.addGraph(graph${index});
+							</py:if>
+						</py:for>
+
+						
+						// CURSOR
+						var chartCursor = new AmCharts.ChartCursor();
+						chartCursor.cursorAlpha = 0;
+						chartCursor.cursorPosition = "mouse";
+						chart.addChartCursor(chartCursor);
+
+						var legend = new AmCharts.AmLegend();
+						legend.marginLeft = 110;
+						legend.useGraphSettings = true;
+						chart.addLegend(legend);
+						chart.creditsPosition = "bottom-right";
+
+						// WRITE
+						chart.write("chartdiv");
+					});
+
+					function flag(m, f)
+					{
+						$.post(
+							"flag",
+							{num: ${int(averages['Team'])}, match: m, flagval: f},
+							function(data) {window.location.reload(true);}
+						);
+					}
+				</script>
+				
+            <div class="container clearfix">
+                <div id="page_title" align="center">Team - ${int(averages['Team'])}</div>
+                <div py:if="old_averages" class="comparebox_container">
+					<p style="font-size: 32px;">Last Event - ${int(old_averages['Team'])}</p>
+					<div class="statbox_container">
+						<div id="stats">
+							<py:for each="key in columns">
+								<p py:if="key != 'Team'" class="statbox">${key}: ${old_averages[key]}</p>
+							</py:for>
+						</div>
+					</div>
+				</div>
+				<div class="comparebox_container">
+                    <p style="font-size: 32px;">This Event</p>
+                    <div class="statbox_container">
+                        <div id="stats">
+							<py:for each="key in columns">
+								<p py:if="key != 'Team'" class="statbox">${key}: ${averages[key]}</p>
+							</py:for>
+						</div>
+					</div>
+				</div>
+				<div py:if="pitScout" class="comparebox_container">
+					<p style="font-size: 32px;">Pit Scout</p>
+					<div class="statbox_container">
+						<div id="stats">
+							<py:for each="key in pitColumns">
+								<p py:if="key != 'Team'" class="statbox">${key}: ${pitScout[key]}</p>
+							</py:for>
+						</div>
+					</div>
+				</div>
+                <div id="chartdiv" style="height:400px; margin: 0 auto;"></div>
+                <div id="table_container" class="team_table"> 				
+                    <table class="table table-striped table-hover text-center" role="grid">
+                        <thead>
+                            <tr role="row">
+                                <th class="hidden-xs col-sm-1 text-center" data-column="0" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-label="Match"><div class="tablesorter-header-inner">Match</div></th>
+                                <th class="col-xs-3 hidden-sm hidden-md hidden-lg hidden-xl text-center" data-column="0" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-label="Match"><div class="tablesorter-header-inner">M</div></th>
+                                
+                                
+                                <th class="col-xs-3 col-sm-1 text-center" data-column="1" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-label="Auto"><div class="tablesorter-header-inner">Auto</div></th>
+                                <th class="col-xs-3 col-sm-1 text-center" data-column="2" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-label="Tele1"><div class="tablesorter-header-inner">Tele1</div></th>
+                                <th class="Col-xs-3 col-sm-1 text-center" data-column="3" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-label="Tele2"><div class="tablesorter-header-inner">Tele2</div></th>
+                                
+                                
+                                <th class="col-xs-3 col-sm-1 text-center" data-column="4" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-label="Match"><div class="tablesorter-header-inner">Other</div></th>
+                                <th class="col-xs-3 col-sm-1 text-center" data-column="5" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-label="Match"><div class="tablesorter-header-inner">Flag</div></th>
+                                <th class="hidden-xs col-sm-1 text-center" data-column="6" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-label="Match"><div class="tablesorter-header-inner">Edit</div></th>
+                            </tr>
+                        </thead>
+                        <tbody aria-live="polite" aria-relevant="all">
+							<py:for each="entry in matches">
+								<tr role="row" py:attrs="entry['FlagAttr']">
+									<td>${entry['Match']}</td>
+									<td>${entry['Text']['auto']}</td>
+									<td>${entry['Text']['teleop1']}</td>
+									<td>${entry['Text']['teleop2']}</td>
+									<td>${entry['Text']['other']}</td>
+									<td><a class="flag" href="javascript:flag(entry['Match'], entry['Flag']);">X</a></td>
+									<td class="hidden-xs"><a class="edit" href="/edit?key=${entry['Key']}">E</a></td>
+								</tr>
+							</py:for>
+                        </tbody>
+                    </table>
+                </div>
+				<py:if test="image">
+					<br/>
+					<div style="text-align: center">
+						<p style="font-size: 32px;">Image</p>
+						<img src="${image}"></img>
+					</div>
+					<br />
+				</py:if>
+				<div style="text-align: center; margin: 0 auto;">
+                    <p style="font-size: 32px; font-weight: bold">Comments</p>
+                    <br />
+					<py:if test="comments">
+						<py:for each="comment in comments">
+							<div class="commentbox"><p>${comment[1]}</p></div>
+						</py:for>
+					</py:if>
+					<div>
+						<form style="width: 100%;" method="post" action="submit">
+							<input name="team" value="${int(averages['Team'])}" type="hidden" />
+							<div>
+								<textarea name="comment" rows="3" style="width: 50%"></textarea>
+							</div>
+							<button class="submit" type="submit">Submit</button>
+						</form>
+					</div>
+					<br />
+					<p style="text-align: center; font-size: 24px"><a href="/matches?n=${int(averages['Team'])}">View this team's match schedule</a></p>
+				</div>
+			</div>
+			<xi:include href="footer.html"/>
+		</div>
+        <div id="bottom_border"></div>
+    </body>
+</html>
