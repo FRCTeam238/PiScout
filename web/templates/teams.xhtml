@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  
+	<xi:include href="head.xhtml" />
+	<body>
+		<xi:include href="header.xhtml" /> 
+        <div id="body_bg">
+			<script src="./static/js/amcharts.js"></script>
+			<script src="./static/js/serial.js"></script>
+			<script>
+				var chart;
+				var graph;
+
+				var chartData = ${chart_data}
+				
+				let color = ["#FF0000", "#000FFF", "#1DD300", "#C100E3", "#AF0000", "#000666", "#0D5B00", "#610172"]
+
+				AmCharts.ready(function () {{
+					// SERIAL CHART
+					chart = new AmCharts.AmSerialChart();
+
+					chart.dataProvider = chartData;
+					chart.marginLeft = 10;
+					chart.categoryField = "match";
+
+					// AXES
+					// category
+					var categoryAxis = chart.categoryAxis;
+					categoryAxis.dashLength = 3;
+					categoryAxis.minorGridEnabled = true;
+					categoryAxis.minorGridAlpha = 0.1;
+
+					// value
+					var valueAxis = new AmCharts.ValueAxis();
+					valueAxis.position = "left";
+					valueAxis.axisColor = "#111111";
+					valueAxis.gridAlpha = 0;
+					valueAxis.axisThickness = 2;
+					chart.addValueAxis(valueAxis)
+
+					var valueAxis2 = new AmCharts.ValueAxis();
+					valueAxis2.position = "right";
+					valueAxis2.axisColor = "#FCD202";
+					valueAxis2.gridAlpha = 0;
+					valueAxis2.axisThickness = 2;
+					chart.addValueAxis(valueAxis2);
+					
+					<py:for each="index, team in enumerate(teams)">		
+							graph${team}_1 = new AmCharts.AmGraph();
+                            graph${team}_1.title = "Team ${team} ${stat1}";
+                            graph${team}_1.valueAxis = valueAxis;
+                            graph${team}_1.type = "smoothedLine"; // this line makes the graph smoothed line.
+                            graph${team}_1.lineColor = color[${index}];
+                            graph${team}_1.bullet = "round";
+                            graph${team}_1.bulletSize = 8;
+                            graph${team}_1.bulletBorderColor = "#FFFFFF";
+                            graph${team}_1.bulletBorderAlpha = 1;
+                            graph${team}_1.bulletBorderThickness = 2;
+                            graph${team}_1.lineThickness = 2;
+                            graph${team}_1.valueField = "team${team}stat1";
+                            graph${team}_1.balloonText = "Team ${team} ${stat1}: [[value]]";
+                            chart.addGraph(graph${team}_1);
+					</py:for>
+					<py:if test="stat2">
+						<py:for each="index, team in enumerate(teams)">		
+							graph${team}_2 = new AmCharts.AmGraph();
+							graph${team}_2.title = "Team ${team} ${stat2}";
+							graph${team}_2.valueAxis = valueAxis;
+							graph${team}_2.type = "smoothedLine"; // this line makes the graph smoothed line.
+							graph${team}_2.lineColor = color[${index+4}];
+							graph${team}_2.bullet = "round";
+							graph${team}_2.bulletSize = 8;
+							graph${team}_2.bulletBorderColor = "#FFFFFF";
+							graph${team}_2.bulletBorderAlpha = 1;
+							graph${team}_2.bulletBorderThickness = 2;
+							graph${team}_2.lineThickness = 2;
+							graph${team}_2.valueField = "team${team}stat2";
+							graph${team}_2.balloonText = "Team ${team} ${stat2}: [[value]]";
+							chart.addGraph(graph${team}_2);
+						</py:for>
+					</py:if>
+					
+					// CURSOR
+					var chartCursor = new AmCharts.ChartCursor();
+					chartCursor.cursorAlpha = 0;
+					chartCursor.cursorPosition = "mouse";
+					chart.addChartCursor(chartCursor);
+
+					var legend = new AmCharts.AmLegend();
+					legend.marginLeft = 110;
+					legend.useGraphSettings = true;
+					chart.addLegend(legend);
+					chart.creditsPosition = "bottom-right";
+
+					// WRITE
+					chart.write("chartdiv");
+				}});
+			$(document).ready(function() {{
+				$("#${stat1}").attr("selected", "selected");
+				$("#${stat2}2").attr("selected", "selected");
+			}});
+			</script>
+            <div class="container clearfix" align="center">
+                <div id="page_title" align="center">Compare Teams - ${session['mode']} - ${session['event']}</div>
+                <div py:for="team in stat_data" class="comparebox_container">
+                    <p><a href="/team?n=${int(team['Team'])}" style="font-size: 32px;">Team ${int(team['Team'])}</a></p>
+                    <div class="statbox_container">
+                        <div id="stats">
+							<py:for each="stat in columns">
+								<p py:if="stat != 'Team'" class="statbox">${stat}: ${team[stat]}</p>
+							</py:for>
+                        </div>
+                    </div>
+                </div>
+				<div id="chartdiv" style="height:400px; margin: 0 auto;"></div>
+				<div id="statSelect" style="margin:auto;">
+                    <form method="post" action="" style="display:inline-block; margin:5px">
+						<select class="fieldsm" name="stat1">
+							<py:for each="key in chartColumns">
+								<option py:if="key!='match'" id="${key}" value="${key}">${key}</option>
+							</py:for>
+						</select>
+						<select class="fieldsm" name="stat2">
+							<option id="none" value="none">None</option>
+							<py:for each="key in chartColumns">
+								<option py:if="key!='match'" id="${key}2" value="${key}">${key}</option>
+							</py:for>
+						</select>
+						<button class="submit" type="submit">Submit</button>
+				    </form>
+				</div>
+            </div>
+			<xi:include href="footer.html"/>
+        </div>
+        <div id="bottom_border"></div>
+    </body>
+</html>

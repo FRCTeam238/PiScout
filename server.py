@@ -310,6 +310,7 @@ class ScoutServer(object):
     def teams(self, n1='', n2='', n3='', n4='', stat1='', stat2=''):
         sessionCheck()
         nums = [n1, n2, n3, n4]
+        nums = [i for i in nums if i != '']
         if stat2 == 'none':
             stat2 = ''
         if not stat1:
@@ -321,41 +322,24 @@ class ScoutServer(object):
         cursor = conn.cursor()
         output = '<div>'
 
+        stats_data=[]
         # Grab data for each team, and generate a statbox
         for index, n in enumerate(nums):
             if not n:
                 continue
             if not n.isdigit():
                 raise cherrypy.HTTPError(400, "You fool! Enter NUMBERS, not letters.")
-            average = cursor.execute('SELECT * FROM averages WHERE Team=?', (n,)).fetchall()
+            sqlCommand = 'SELECT * FROM ' + cherrypy.session['mode'] + ' WHERE Team=?'
+            average = cursor.execute(sqlCommand, (n,)).fetchall()
             assert len(average) < 2
             if len(average):
                 entry = average[0]
             else:
                 entry = dict(game.AVERAGE_FIELDS)
                 entry.update(game.HIDDEN_AVERAGE_FIELDS)
-            output += '''<div class="comparebox_container">
-                    <p><a href="/team?n={0}" style="font-size: 32px;">Team {0}</a></p>
-                    <div class="statbox_container">
-                        <div id="stats">
-                            <p class="statbox" style="font-weight:bold">Average match:</p>'''.format(int(entry['Team']))
-            for key in game.AVERAGE_FIELDS:
-                if (key != 'Team'):
-                    output += '''<p class="statbox">{0}: {1}</p>'''.format(key, entry[key])
-            if cherrypy.session['auth'] == serverinfo.AUTH:
-                for key in game.HIDDEN_AVERAGE_FIELDS:
-                    output += '''<p class="statbox">{0}: {1}</p>'''.format(key, entry[key])
-            output += '''       </div>
-                            </div>
-                         </div>'''
-            if ((len(nums) == 2 and index == 0) or (len(nums) != 2 and index == 1)):
-                output += '</div><div>'
-        output += '</div>'
+            stats_data.append(entry)
 
-        teamCharts = ''
         dataset = []
-        colors = ["#FF0000", "#000FFF", "#1DD300", "#C100E3", "#AF0000", "#000666", "#0D5B000", "#610172"]
-
         # For each team, grab each match entry and generate chart data, then add them to the graph
         for idx, n in enumerate(nums):
             if not n:
@@ -381,59 +365,10 @@ class ScoutServer(object):
                             if stat2:
                                 dataset[index]["team" + n + "stat2"] = dp[stat2]
 
-            teamCharts += '''// GRAPH
-                            graph{0} = new AmCharts.AmGraph();
-                            graph{0}.title = "{1}";
-                            graph{0}.valueAxis = valueAxis;
-                            graph{0}.type = "smoothedLine"; // this line makes the graph smoothed line.
-                            graph{0}.lineColor = "{3}";
-                            graph{0}.bullet = "round";
-                            graph{0}.bulletSize = 8;
-                            graph{0}.bulletBorderColor = "#FFFFFF";
-                            graph{0}.bulletBorderAlpha = 1;
-                            graph{0}.bulletBorderThickness = 2;
-                            graph{0}.lineThickness = 2;
-                            graph{0}.valueField = "{2}";
-                            graph{0}.balloonText = "{1}<br><b><span style='font-size:14px;'>[[value]]</span></b>";
-                            chart.addGraph(graph{0});
-                            '''.format(n + "_1", "Team " + n + stat1, "team" + n + "stat1", colors[idx])
-            if stat2:
-                teamCharts += '''// GRAPH
-                graph{0} = new AmCharts.AmGraph();
-                graph{0}.title = "{1}";
-                graph{0}.valueAxis = valueAxis2;
-                graph{0}.type = "smoothedLine"; // this line makes the graph smoothed line.
-                graph{0}.lineColor = "{3}";
-                graph{0}.bullet = "round";
-                graph{0}.bulletSize = 8;
-                graph{0}.bulletBorderColor = "#FFFFFF";
-                graph{0}.bulletBorderAlpha = 1;
-                graph{0}.bulletBorderThickness = 2;
-                graph{0}.lineThickness = 2;
-                graph{0}.valueField = "{2}";
-                graph{0}.balloonText = "{1}<br><b><span style='font-size:14px;'>[[value]]</span></b>";
-                chart.addGraph(graph{0});
-                '''.format(n + "_2", "Team " + n + stat2, "team" + n + "stat2", colors[4 + idx])
-
-        statSelector = '''<div id="statSelect" style="margin:auto;">
-                    <form method="post" action="" style="display:inline-block; margin:5px">
-                            <select class="fieldsm" name="stat1">'''
-        for key in game.CHART_FIELDS:
-            if (key != "match"):
-                statSelector += '''<option id="{0}" value="{0}">{0}</option>'''.format(key)
-        statSelector += '''</select>
-                          <select class="fieldsm" name="stat2">
-                              <option id="none" value="none">None</option>'''
-        for key in game.CHART_FIELDS:
-            if (key != "match"):
-                statSelector += '''<option id="{0}2" value="{0}">{0}</option>'''.format(key)
-        statSelector += '''</select>
-                          <button class="submit" type="submit">Submit</button>
-                          </form>
-                          </div>'''
-        with open('web/teams.html', 'r') as file:
-            page = file.read()
-        return page.format(str(dataset).replace("'", '"'), teamCharts, stat1, stat2 + "2", output, statSelector)
+        tmpl = loader.load('teams.xhtml')
+        page = tmpl.generate(session=cherrypy.session, chart_data=str(dataset).replace("'", '"'), columns=game.AVERAGE_FIELDS,
+                             chartColumns=game.CHART_FIELDS, stat1=stat1, stat2=stat2, teams=nums, stat_data=stats_data)
+        return page.render('html', doctype='html')
 
     # Output for alliance comparison
     @cherrypy.expose()
@@ -480,12 +415,11 @@ class ScoutServer(object):
 
             if prevEvent == 0:
                 sqlCommand = "SELECT * FROM " + cherrypy.session['mode'] + " WHERE Team=?"
-                average = cursor.execute(sqlCommand, (n, )).fetchall()
-                assert len(average) < 2
+                average = cursor.execute(sqlCommand, (n, )).fetchone()
                 if not len(average):
                     average = dict(game.AVERAGE_FIELDS)
                     average.update(game.HIDDEN_AVERAGE_FIELDS)
-                blueData.append(average[0])
+                blueData.append(average)
 
         for i, n in enumerate(numsRed):
             if not n.isdigit():
