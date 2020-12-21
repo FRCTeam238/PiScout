@@ -28,7 +28,7 @@ class ScoutServer(object):
     @cherrypy.expose
     def index(self, m='', e=''):
         # Add auth value to session if not present
-        authCheck()
+        sessionCheck()
 
         # Handle event selection. When the event is changed, a POST request is sent here.
         if e != '':
@@ -68,6 +68,7 @@ class ScoutServer(object):
     # Page for creating picklist
     @cherrypy.expose
     def picklist(self, list='', dnp=''):
+        sessionCheck()
         if not cherrypy.session['auth'] == serverinfo.AUTH:
             raise cherrypy.HTTPError(401, "Not authorized to view picklist. Please log in and try again.")
 
@@ -124,6 +125,7 @@ class ScoutServer(object):
     # Page to show result of login attempt
     @cherrypy.expose()
     def login(self, auth=''):
+        sessionCheck()
         loginResult = "Login failed! Please check password"
         if auth == serverinfo.AUTH:
             cherrypy.session['auth'] = auth
@@ -144,7 +146,7 @@ class ScoutServer(object):
 
     @cherrypy.expose()
     def team(self, n="238"):
-        authCheck()
+        sessionCheck()
         if not n.isdigit():
             raise cherrypy.HTTPRedirect('/')
 
@@ -253,6 +255,7 @@ class ScoutServer(object):
     # Called to toggle flag on a data entry. Also does a recalc to add/remove entry from stats
     @cherrypy.expose()
     def flag(self, num='', match='', flagval=0):
+        sessionCheck()
         if not cherrypy.session['admin'] == serverinfo.ADMIN:
             raise cherrypy.HTTPError(401, "Not authorized to flag match data. Please log in and try again")
         if not (num.isdigit() and match.isdigit()):
@@ -269,6 +272,7 @@ class ScoutServer(object):
     # Called to recalculate all calculated values
     @cherrypy.expose()
     def recalculate(self):
+        sessionCheck()
         conn = sql.connect(self.datapath())
         conn.row_factory = sql.Row
         cursor = conn.cursor()
@@ -288,7 +292,7 @@ class ScoutServer(object):
     # Input interface to choose teams to compare
     @cherrypy.expose()
     def compareTeams(self):
-        authCheck()
+        sessionCheck()
         tmpl = loader.load('compareTeams.xhtml')
         page = tmpl.generate(session=cherrypy.session)
         return page.render('html', doctype='html')
@@ -296,7 +300,7 @@ class ScoutServer(object):
     # Input interface to choose alliances to compare
     @cherrypy.expose
     def compareAlliances(self):
-        authCheck()
+        sessionCheck()
         tmpl = loader.load('compareAlliances.xhtml')
         page = tmpl.generate(session=cherrypy.session)
         return page.render('html', doctype='html')
@@ -304,7 +308,7 @@ class ScoutServer(object):
     # Output for team comparison
     @cherrypy.expose()
     def teams(self, n1='', n2='', n3='', n4='', stat1='', stat2=''):
-        authCheck()
+        sessionCheck()
         nums = [n1, n2, n3, n4]
         if stat2 == 'none':
             stat2 = ''
@@ -434,7 +438,7 @@ class ScoutServer(object):
     # Output for alliance comparison
     @cherrypy.expose()
     def alliances(self, b1='', b2='', b3='', r1='', r2='', r3='', level=''):
-        authCheck()
+        sessionCheck()
         if level == '':
             level = 'quals'
         numsBlue = [b1, b2, b3]
@@ -537,7 +541,7 @@ class ScoutServer(object):
     # Lists schedule data from TBA
     @cherrypy.expose()
     def matches(self, n=0):
-        authCheck()
+        sessionCheck()
         n = int(n)
         event = self.getevent()
         datapath = 'data_' + event + '.db'
@@ -710,6 +714,7 @@ class ScoutServer(object):
     # Page for editing match data
     @cherrypy.expose()
     def edit(self, key='', **params):
+        sessionCheck()
         datapath = 'data_' + self.getevent() + '.db'
         conn = sql.connect(datapath)
         conn.row_factory = sql.Row
@@ -772,6 +777,7 @@ class ScoutServer(object):
     # Page to show current rankings, and predict final rankings
     @cherrypy.expose()
     def rankings(self):
+        sessionCheck()
         self.database_exists(self.getevent())
         conn = sql.connect(self.datapath())
         conn.row_factory = sql.Row
@@ -987,7 +993,7 @@ def keyFromItem(func):
     return lambda item: func(*item)
 
 
-def authCheck():
+def sessionCheck():
     if 'auth' not in cherrypy.session:
         if localInstance:
             cherrypy.session['auth'] = serverinfo.AUTH
