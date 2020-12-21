@@ -433,10 +433,8 @@ class ScoutServer(object):
 
     # Output for alliance comparison
     @cherrypy.expose()
-    def alliances(self, b1='', b2='', b3='', r1='', r2='', r3='', mode='', level=''):
+    def alliances(self, b1='', b2='', b3='', r1='', r2='', r3='', level=''):
         authCheck()
-        if mode == '':
-            mode = 'averages'
         if level == '':
             level = 'quals'
         numsBlue = [b1, b2, b3]
@@ -446,13 +444,12 @@ class ScoutServer(object):
         conn.row_factory = sql.Row
         cursor = conn.cursor()
 
-        teamsBlue = []
-        teamsRed = []
-        blueStatbox = ""
+        blueData = []
+        redData = []
         # iterate through all six teams and grab data
         for i, n in enumerate(numsBlue):
             if not n.isdigit():
-                raise cherrypy.HTTPError(400, "You fool! Enter six valid team numbers!")
+                raise cherrypy.HTTPError(400, "Enter six valid team numbers!")
             entries = cursor.execute('SELECT * FROM scout WHERE Team=? ORDER BY Match DESC', (n,)).fetchall()
             prevEvent = 0
             if len(entries) < 3:
@@ -470,51 +467,25 @@ class ScoutServer(object):
                     oldconn = sql.connect('data_' + lastEventCode + '.db')
                     oldconn.row_factory = sql.Row
                     oldcursor = oldconn.cursor()
-                    oldAverages = oldcursor.execute('SELECT * FROM averages WHERE Team=?', (n,)).fetchall()
+                    sqlCommand = "SELECT * FROM " + cherrypy.session['mode'] + " WHERE Team=?"
+                    oldAverages = oldcursor.execute(sqlCommand, (n,)).fetchall()
                     assert len(oldAverages) < 2  # ensure there aren't two entries for one team
                     if len(oldAverages):
-                        oldData = oldAverages[0]
-                        blueStatbox += '''<div class="comparebox_container">
-                    <p><a href="/team?n={0}" style="font-size: 32px;">Last Event - {0}</a></p>
-                    <div class="statbox_container">
-                        <div id="stats">'''.format(n)
-                        for key in game.AVERAGE_FIELDS:
-                            if (key != 'Team'):
-                                blueStatbox += '''<p class="statbox">{0}: {1}</p>'''.format(key, oldData[key])
-                        blueStatbox += '''       </div>
-                                    </div>
-                                 </div>'''
+                        blueData.append(oldAverages[0])
                         prevEvent = 1
 
             if prevEvent == 0:
-                if mode == 'averages':
-                    average = cursor.execute('SELECT * FROM averages WHERE Team=?', (n,)).fetchall()
-                else:
-                    average = cursor.execute('SELECT * FROM maxes WHERE Team=?', (n,)).fetchall()
+                sqlCommand = "SELECT * FROM " + cherrypy.session['mode'] + " WHERE Team=?"
+                average = cursor.execute(sqlCommand, (n, )).fetchall()
                 assert len(average) < 2
-                if len(average):
-                    entry = average[0]
-                else:
-                    entry = dict(game.AVERAGE_FIELDS)
-                    entry.update(game.HIDDEN_AVERAGE_FIELDS)
-                blueStatbox += '''<div class="comparebox_container">
-                      <p><a href="/team?n={0}" style="font-size: 32px;">Team {0}</a></p>
-                      <div class="statbox_container">
-                          <div id="stats">'''.format(n)
-                for key in game.AVERAGE_FIELDS:
-                    if (key != 'Team'):
-                        blueStatbox += '''<p class="statbox">{0}: {1}</p>'''.format(key, entry[key])
-                # if cherrypy.session['auth'] == serverinfo.AUTH:
-                #  for key in game.HIDDEN_AVERAGE_FIELDS:
-                #    blueStatbox += '''<p class="statbox">{0}: {1}</p>'''.format(key, entry[key])
-                blueStatbox += '''       </div>
-                              </div>
-                           </div>'''
+                if not len(average):
+                    average = dict(game.AVERAGE_FIELDS)
+                    average.update(game.HIDDEN_AVERAGE_FIELDS)
+                blueData.append(average[0])
 
-        redStatbox = ""
         for i, n in enumerate(numsRed):
             if not n.isdigit():
-                raise cherrypy.HTTPError(400, "You fool! Enter six valid team numbers!")
+                raise cherrypy.HTTPError(400, "Enter six valid team numbers!")
             entries = cursor.execute('SELECT * FROM scout WHERE Team=? ORDER BY Match DESC', (n,)).fetchall()
             prevEvent = 0
             if len(entries) < 3:
@@ -532,45 +503,21 @@ class ScoutServer(object):
                     oldconn = sql.connect('data_' + lastEventCode + '.db')
                     oldconn.row_factory = sql.Row
                     oldcursor = oldconn.cursor()
-                    oldAverages = oldcursor.execute('SELECT * FROM averages WHERE Team=?', (n,)).fetchall()
+                    sqlCommand = "SELECT * FROM " + cherrypy.session['mode'] + " WHERE Team=?"
+                    oldAverages = oldcursor.execute(sqlCommand, (n, )).fetchall()
                     assert len(oldAverages) < 2  # ensure there aren't two entries for one team
                     if len(oldAverages):
-                        oldData = oldAverages[0]
-                        redStatbox += '''<div class="comparebox_container">
-                    <p><a href="/team?n={0}" style="font-size: 32px;">Last Event - {0}</a></p>
-                    <div class="statbox_container">
-                        <div id="stats">'''.format(n)
-                        for key in game.AVERAGE_FIELDS:
-                            if (key != 'Team'):
-                                redStatbox += '''<p class="statbox">{0}: {1}</p>'''.format(key, oldData[key])
-                        redStatbox += '''       </div>
-                                    </div>
-                                 </div>'''
+                        redData.append(oldAverages[0])
                         prevEvent = 1
+
             if prevEvent == 0:
-                if mode == 'averages':
-                    average = cursor.execute('SELECT * FROM averages WHERE Team=?', (n,)).fetchall()
-                else:
-                    average = cursor.execute('SELECT * FROM maxes WHERE Team=?', (n,)).fetchall()
+                sqlCommand = "SELECT * FROM " + cherrypy.session['mode'] + " WHERE Team=?"
+                average = cursor.execute(sqlCommand, (n, )).fetchall()
                 assert len(average) < 2
-                if len(average):
-                    entry = average[0]
-                else:
-                    entry = dict(game.AVERAGE_FIELDS)
-                    entry.update(game.HIDDEN_AVERAGE_FIELDS)
-                redStatbox += '''<div class="comparebox_container">
-                      <p><a href="/team?n={0}" style="font-size: 32px;">Team {0}</a></p>
-                      <div class="statbox_container">
-                          <div id="stats">'''.format(n)
-                for key in game.AVERAGE_FIELDS:
-                    if (key != 'Team'):
-                        redStatbox += '''<p class="statbox">{0}: {1}</p>'''.format(key, entry[key])
-                # if cherrypy.session['auth'] == serverinfo.AUTH:
-                # for key in game.HIDDEN_AVERAGE_FIELDS:
-                #  redStatbox += '''<p class="statbox">{0}: {1}</p>'''.format(key, entry[key])
-                redStatbox += '''       </div>
-                              </div>
-                              </div>'''
+                if not len(average):
+                    average = dict(game.AVERAGE_FIELDS)
+                    average.update(game.HIDDEN_AVERAGE_FIELDS)
+                redData.append(average[0])
 
         # Predict scores
         blue_score = game.predictScore(self.datapath(), numsBlue, level)['score']
@@ -581,10 +528,11 @@ class ScoutServer(object):
         # Calculate win probability. Currently uses regression from 2016 data, this should be updated
         prob_red = 1 / (1 + math.e ** (-0.08099 * (red_score - blue_score)))
         conn.close()
-        with open('web/alliances.html', 'r') as file:
-            page = file.read()
-        return page.format(round((1 - prob_red) * 100, 1), blue_score, blueStatbox, round(prob_red * 100, 1), red_score,
-                           redStatbox)
+
+        tmpl = loader.load('alliances.xhtml')
+        page = tmpl.generate(session=cherrypy.session, red_win=round(prob_red*100, 1), red_score=red_score,
+                             blue_score=blue_score, red_data=redData, blue_data=blueData, columns=game.AVERAGE_FIELDS)
+        return page.render('html', doctype='html')
 
     # Lists schedule data from TBA
     @cherrypy.expose()
@@ -1047,6 +995,8 @@ def authCheck():
         else:
             cherrypy.session['auth'] = ""
             cherrypy.session['admin'] = ""
+    if 'mode' not in cherrypy.session:
+        cherrypy.session['mode'] = "averages"
 
 
 # Configuration used for local instance of the server

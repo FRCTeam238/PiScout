@@ -115,6 +115,7 @@
 {
   display:table;
   text-align:center;
+  
 }
 
 #apr
@@ -373,7 +374,7 @@ td
 
 /* Removes page title and URLs (inserted by bootstrap) from print so Alliance compare fits on a page */
 @media print {
-  #page_title, #page_header, #top_menu
+  #page_title, #page_header, #top_menu, #footer
   {
     display:none;
   }
@@ -382,10 +383,11 @@ td
   {
     content:none;
   }
+  
 }
 
 /* Tweak styles for mobile for better display. Block display allows the elements to stack on top when they don't fit side by side */
-@media (max-width: 767px) {
+@media only screen and (max-width: 767px) {
   #alliance_compare_container
   {
     display:block;

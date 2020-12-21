@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  
+	<xi:include href="head.xhtml" />
+	<body>
+		<xi:include href="header.xhtml" /> 
+        <div id="body_bg">
+            <div class="container clearfix" align="center">
+                <div id="page_title" align="center">Compare Alliances</div>
+                
+               <div id="alliance_compare_container">
+                    <div class="alliance_compare_cell">
+                        <p style="font-size: 36px; color: #0000B8;">Blue Alliance</p>
+                        <p style="font-size: 24px; color: #0000B8;">${100-red_win}% chance to win</p>
+                        <div class="statbox_container">
+                            <div id="apr">
+                                <p style="font-size: 20pt;">Proj. Score</p>
+                                <p style="font-size: 40pt;">${blue_score}</p>
+                                <br />
+                            </div>
+                        </div>
+                        <div py:for="team_data in blue_data" class="comparebox_container">
+							<p><a href="/team?n=${int(team_data['Team'])}" style="font-size: 32px;">${int(team_data['Team'])}</a></p>
+							<div class="statbox_container">
+								<div id="stats">
+									<py:for each="key in columns">
+										<p py:if="key!='Team'" class="statbox">${key}: ${team_data[key]}</p>
+									</py:for>
+								</div>
+							</div>
+						</div>
+                    </div>                    
+                    <div class="alliance_compare_cell">
+                        <p style="font-size: 36px; color: #B20000;">Red Alliance</p>
+                        <p style="font-size: 24px; color: #B20000;">${red_win}% chance to win</p>
+                        <div class="statbox_container">
+                            <div id="apr">
+                                <p style="font-size: 20pt;">Proj. Score</p>
+                                <p style="font-size: 40pt;">${red_score}</p>
+                                <br />
+                            </div>
+                        </div>
+						<div py:for="team_data in red_data" class="comparebox_container">
+							<p><a href="/team?n=${int(team_data['Team'])}" style="font-size: 32px;">${int(team_data['Team'])}</a></p>
+							<div class="statbox_container">
+								<div id="stats">
+									<py:for each="key in columns">
+										<p py:if="key!='Team'" class="statbox">${key}: ${team_data[key]}</p>
+									</py:for>
+								</div>
+							</div>
+						</div>
+                    </div>
+                </div>
+            </div>
+            <xi:include href="footer.html"/>
+        </div>
+        <div id="bottom_border"></div>
+    </body>
+</html>
