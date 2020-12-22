@@ -677,36 +677,14 @@ class ScoutServer(object):
 
         if key == '':
             key = entries[0][0]
-        combobox = ''
-
-        # Generate the entry selection dropdown, placing a * in front of flagged entries
-        for e in entries:
-            combobox += '''<option id="{0}" value="{0}">{1} Team {2}: Match {3}</option>\n'''.format(e['Key'], "*" if e[
-                'Flag'] else "", e['Team'], e['Match'])
 
         # Grab the currently selected entry
         entry = cursor.execute('SELECT * from scout WHERE key=?', (key,)).fetchone()
         conn.close()
 
-        # Generate the Edit interface, with half the data on the left and half on the right
-        i = 0
-        leftEdit = ''
-        rightEdit = ''
-        for key in game.SCOUT_FIELDS:
-            if (key == 'Replay'):
-                continue
-            if (i < len(game.SCOUT_FIELDS) / 2):
-                leftEdit += '''<div><label for="team" class="editLabel">{0}</label>
-                            <input class="editNum" type="number" name="{0}" value="{1}"></div>'''.format(key,
-                                                                                                         entry[key])
-            else:
-                rightEdit += '''<div><label for="team" class="editLabel">{0}</label>
-                            <input class="editNum" type="number" name="{0}" value="{1}"></div>'''.format(key,
-                                                                                                         entry[key])
-            i = i + 1
-        with open('web/edit.html', 'r') as file:
-            page = file.read()
-        return page.format(combobox, entry['Team'], entry['Match'], entry['Key'], leftEdit, rightEdit)
+        tmpl = loader.load('edit.xhtml')
+        page = tmpl.generate(session=cherrypy.session, entries=entries, entry=entry, scout_fields=game.SCOUT_FIELDS)
+        return page.render('html', doctype='html')
 
     # Page to show current rankings, and predict final rankings
     @cherrypy.expose()

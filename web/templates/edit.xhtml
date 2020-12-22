@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  
+	<xi:include href="head.xhtml" />
+	<body>
+		<xi:include href="header.xhtml" /> 
+        <div id="body_bg">
+            <div class="container clearfix" align="center">
+                <div id="page_title" align="center">Edit</div>
+                <div>
+                    <form method="post" action="edit">
+                        <select class="fieldsm" name="key">
+							<option py:for="match in entries" id="${match['Key']}" value="{match['Key']}"><p py:if="match['Flag']">*</p>Team ${match['Team']}: Match ${match['Match']}</option>
+                        </select>
+                        <button class="submit" type="submit">Submit</button>
+                    </form>
+                </div>
+                <div>
+					<p style="font-size: 36pt; font-weight: bold;">Editing Team ${entry['Team']}: Match ${entry['Match']}</p>
+                </div>
+                <form method="post" action="edit">
+                    <div id="alliance_compare_container">
+                        <br/><br/>
+							<div class="edit_compare_cell">
+                            <input type="hidden" name="key" value="${entry['Key']}" />
+                            <py:for each="index, column in enumerate(scout_fields)">
+								<py:if test="len(scout_fields)/2 >= index">
+									<div>
+										<label for="team" class="editLabel">${column}</label>
+											<input class="editNum" type="number" name="${column}" value="${entry[column]}" />
+									</div>
+								</py:if>
+							</py:for>
+							</div>
+							<div class="edit_compare_cell">
+                            <py:for each="index, column in enumerate(scout_fields)">
+								<py:if test="index >= len(scout_fields)/2">
+									<div>
+										<label for="team" class="editLabel">${column}</label>
+											<input class="editNum" type="number" name="${column}" value="${entry[column]}"></input>
+									</div>
+								</py:if>
+							</py:for>
+                        </div>
+                    </div>
+                    <button class="submit" type="submit">Submit</button>
+                </form>    
+            </div>
+			<xi:include href="footer.html"/>
+        </div>
+        <div id="bottom_border"></div>
+    </body>
+</html>
