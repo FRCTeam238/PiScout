@@ -1,3 +1,5 @@
+import ast
+
 import cv2
 import os
 import numpy as np
@@ -56,7 +58,7 @@ class PiScout:
 
     # Loads a new scout sheet from an image
     # Processes the image and stores the result in self.sheet
-    def loadsheet(self, imgpath, b=3, guess=False):
+    def loadsheet(self, imgpath):
         self.matchData = dict(game.SCOUT_FIELDS)
         self.pitData = dict(game.PIT_SCOUT_FIELDS)
         print("Loading a new sheet: " + imgpath)
@@ -411,8 +413,9 @@ class PiScout:
                 if os.path.isfile("queue.txt"):
                     try:
                         with open("queue.txt", "r") as file:
+                            print("Uploading queued matches")
                             lines = file.readlines()
-                            total = lines.len()
+                            total = len(lines)
                             for num, line in enumerate(lines[:]):
                                 print(
                                     "Uploading match "
@@ -437,6 +440,64 @@ class PiScout:
                                 file.write(line)
                             file.truncate()
                             raise
+                if os.path.isfile("editQueue.txt"):
+                    try:
+                        with open("editQueue.txt", "r") as file:
+                            print("Edit Queue found, attempting upload")
+                            lines = file.readlines()
+                            total = len(lines)
+                            for num, line in enumerate(lines[:]):
+                                print(
+                                    "Uploading edit "
+                                    + str(num + 1)
+                                    + "of "
+                                    + str(total)
+                                )
+                                editData = ast.literal_eval(line)
+                                editData['auth'] = serverinfo.AUTH
+                                requests.post(
+                                    serverinfo.SERVER + "/edit",
+                                    data=editData,
+                                )
+                                lines.remove(line)
+                        os.remove("editQueue.txt")
+                    except:
+                        with open("editQueue.txt", "w") as file:
+                            file.seek(0)
+                            for line in lines:
+                                file.write(line)
+                            file.truncate()
+                            raise
+                if os.path.isfile("deleteQueue.txt"):
+                    try:
+                        with open("deleteQueue.txt", "r") as file:
+                            print("Delete Queue found, attempting upload")
+                            lines = file.readlines()
+                            total = len(lines)
+                            for num, line in enumerate(lines[:]):
+                                print(
+                                    "Uploading delete "
+                                    + str(num + 1)
+                                    + " of "
+                                    + str(total)
+                                )
+                                key = ast.literal_eval(line)
+                                requests.post(
+                                    serverinfo.SERVER + "/delete",
+                                    data={
+                                        "key": key,
+                                        "auth": serverinfo.AUTH
+                                    },
+                                )
+                                lines.remove(line)
+                        os.remove("deleteQueue.txt")
+                    except:
+                        with open("deleteQueue.txt", "w") as file:
+                            file.seek(0)
+                            for line in lines:
+                                file.write(line)
+                            file.truncate()
+                            raise
                 requests.post(
                     "http://127.0.0.1:8000/submit",
                     data={
@@ -454,10 +515,19 @@ class PiScout:
                         "auth": serverinfo.AUTH,
                     },
                 )
-                print("Uploading this match was successful")
+                print("Uploading this team was successful")
                 if os.path.isfile("pitQueue.txt"):
                     with open("pitQueue.txt", "r") as file:
-                        for line in file:
+                        print("PitScout queue found, uploading")
+                        lines = file.readlines()
+                        total = len(lines)
+                        for num, line in enumerate(lines[:]):
+                            print(
+                                "Uploading pit team "
+                                + str(num + 1)
+                                + "of "
+                                + str(total)
+                            )
                             requests.post(
                                 serverinfo.SERVER + "/submit",
                                 data={
@@ -466,8 +536,7 @@ class PiScout:
                                     "auth": serverinfo.AUTH,
                                 },
                             )
-                            print("Uploaded an entry from the queue")
-                    os.remove("queue.txt")
+                    os.remove("pitQueue.txt")
                 requests.post(
                     "http://127.0.0.1:8000/submit",
                     data={
