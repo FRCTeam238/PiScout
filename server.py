@@ -5,6 +5,8 @@ import json
 from ast import literal_eval
 import requests
 import math
+
+import server
 from event import CURRENT_EVENT
 import gamespecific as game
 import serverinfo
@@ -937,12 +939,16 @@ class ScoutServer(object):
 
     #page fo deleting match data
     @cherrypy.expose()
-    def delete(self, key="", **params):
+    def delete(self, key="", auth="", **params):
         sessionCheck()
         if not checkAuth(False):
-            raise cherrypy.HTTPError(
-                401, "Not authorized to delete match data. Please log in and try again"
-            )
+            if not auth == serverinfo.AUTH:
+                raise cherrypy.HTTPError(
+                    401, "Not authorized to delete match data. Please log in and try again"
+                )
+        if server.localInstance:
+            with open("deleteQueue.txt", "a+") as file:
+                file.write(str(key) + "\n")
         conn = sql.connect(self.datapath())
         conn.row_factory = sql.Row
         cursor = conn.cursor()
@@ -952,16 +958,17 @@ class ScoutServer(object):
 
     # Page for editing match data
     @cherrypy.expose()
-    def edit(self, key="", **params):
+    def edit(self, key="", auth="", **params):
         sessionCheck()
         conn = sql.connect(self.datapath())
         conn.row_factory = sql.Row
         cursor = conn.cursor()
 
         if not checkAuth(False):
-            raise cherrypy.HTTPError(
-                401, "Not authorized to edit match data. Please log in and try again"
-            )
+            if not auth == serverinfo.AUTH:
+                raise cherrypy.HTTPError(
+                    401, "Not authorized to edit match data. Please log in and try again"
+                )
 
         # If there is data, this is a post and data should be used to update the entry
         if len(params) > 1:
@@ -973,6 +980,10 @@ class ScoutServer(object):
             cursor.execute(sqlCommand)
             conn.commit()
             conn.close()
+            if server.localInstance:
+                with open("editQueue.txt", "a+") as file:
+                    params['key']= key
+                    file.write(str(params) + "\n")
 
         # Grab all match data entries from the event, with flagged entries first, then sorted by team, then match
         conn = sql.connect(self.datapath())
@@ -1236,7 +1247,7 @@ def sessionCheck():
 
 def checkAuth(AdminRequired):
     if "auth" not in cherrypy.session:
-        if localInstance:
+        if server.localInstance:
             cherrypy.session["auth"] = serverinfo.AUTH
             cherrypy.session["admin"] = serverinfo.ADMIN
             return True
@@ -1433,7 +1444,7 @@ def main():
     if len(sys.argv) > 1:
         if sys.argv[1] == "-local":
             print("Starting local server")
-            localInstance = True
+            server.localInstance = True
             cherrypy.quickstart(ScoutServer(), "/", localConf)
         else:
             print("Starting remote server")
