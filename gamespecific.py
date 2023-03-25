@@ -334,7 +334,7 @@ def predictScore(event, teams, level="quals"):
     if low > 9:
         low = 9
     pointsTotal += highCones*5 + highCubes*5
-    pointsTotal += midCones*5 + midCubes*5
+    pointsTotal += midCones*3 + midCubes*3
     pointsTotal += low*2
     links = min(highCones/2, highCubes)
     links += min(midCones/2, midCubes)
