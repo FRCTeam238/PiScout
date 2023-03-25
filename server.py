@@ -461,7 +461,7 @@ class ScoutServer(object):
         try:
             # get the picture for a given team
             m = self.get(
-                "http://www.thebluealliance.com/api/v3/team/frc{0}/media/2022".format(
+                "http://www.thebluealliance.com/api/v3/team/frc{0}/media/2023".format(
                     n
                 ),
                 params=headers,
