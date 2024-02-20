@@ -1,3 +1,4 @@
+import math
 from enum import IntEnum
 
 import server as server
@@ -7,31 +8,25 @@ import proprietary as prop
 SCOUT_FIELDS = {
     "Team": 0,
     "Match": 0,
-    "Mobility": 0,
-    "AutoChargeAttempt": 0,
-    "AutoDocked": 0,
-    "AutoEngaged": 0,
-    "ChargeAttempt": 0,
-    "Docked": 0,
-    "Engaged": 0,
-    "Park": 0,
+    "AutoSpeaker": 0,
+    "AutoMidfield": 0,
+    "Leave": 0,
+    "AStop": 0,
+    "GroundPickup": 0,
+    "SourcePickup": 0,
     "Disabled": 0,
     "Defense": 0,
     "Defended": 0,
-    "LowCube": 0,
-    "MidCube": 0,
-    "HighCube": 0,
-    "AutoLowCube": 0,
-    "AutoMidCube": 0,
-    "AutoHighCube": 0,
-    "LowCone": 0,
-    "MidCone": 0,
-    "HighCone": 0,
-    "AutoLowCone": 0,
-    "AutoMidCone": 0,
-    "AutoHighCone": 0,
-    "MidfieldCone": 0,
-    "MidfieldCube": 0,
+    "TeleSpeaker": 0,
+    "TeleAmp": 0,
+    "Amplified": 0,
+    "Amplification": 0,
+    "Coop": 0,
+    "Onstage": 0,
+    "Trap": 0,
+    "Spotlight": 0,
+    "Park": 0,
+    "Harmony": 0,
     "Replay": 0,
     "Flag": 0,
 }
@@ -41,12 +36,11 @@ SCOUT_FIELDS = {
 # Hidden average fields are only displayed when logged in or on local.
 DISPLAY_FIELDS = {
     "Team": 0,
-    "Cycles": 0,
-    "GridPoints": 0,
-    "Cones": 0,
-    "Cubes": 0,
-    "Auto": 0,
-    "ChargeStation": 0,
+    "TeleCycles": 0,
+    "AutoSpeaker": 0,
+    "TeleSpeaker": 0,
+    "TeleAmp": 0,
+    "Stage": 0,
     "Defense": 0,
 }
 
@@ -62,29 +56,28 @@ PIT_SCOUT_FIELDS = {
     "Batteries": 0,
     "SillyWheels": 0,
     "Swerve": 0,
-    "TripleMech": 0,
-    "Cone": 0,
-    "Cube": 0,
     "FloorPickup": 0,
-    "DoubleSub": 0,
-    "Level1": 0,
-    "Level2": 0,
-    "Level3": 0,
-    "Width": 0,
+    "SourcePickup": 0,
+    "Harmony": 0,
+    "Amp": 0,
+    "Speaker": 0,
+    "Trap": 0,
+    "Podium": 0,
+    "AmpZone": 0,
+    "UnderStage": 0,
 }
 
 # Define which pit scout fields to display on alliance page
-PIT_DISPLAY_FIELDS = {"Cone": 0, "Cube": 0, "SillyWheels": 0, "Swerve": 0, "Width": 0}
+PIT_DISPLAY_FIELDS = {"Amp": 0, "Speaker": 0, "SillyWheels": 0, "Swerve": 0, "UnderStage": 0}
 
 # Defines the fields displayed on the charts on the team and compare pages
 CHART_FIELDS = {
     "match": 0,
-    "Auto": 0,
-    "ChargeStation": 0,
-    "GridPoints": 0,
-    "Cycles": 0,
-    "Cones": 0,
-    "Cubes": 0
+    "AutoSpeaker": 0,
+    "TeleCycles": 0,
+    "TeleSpeaker": 0,
+    "TeleAmp": 0,
+    "Stage": 0,
 }
 
 
@@ -94,24 +87,24 @@ class SheetType(IntEnum):
 
 
 def getDisplayFieldCreate():
-    retVal = "Cones AS (AutoHighCone+HighCone+AutoMidCone+MidCone+AutoLowCone+LowCone) STORED, "
-    retVal += "Cubes AS (AutoHighCube+HighCube+AutoMidCube+MidCube+AutoLowCube+LowCube) STORED, "
-    retVal += "Cycles AS (Cones+Cubes) STORED, "
-    retVal += "GridPoints AS (6*AutoHighCube+6*AutoHighCone+4*AutoMidCube+4*AutoMidCone+3*AutoLowCone+3*AutoLowCube+5*HighCone+5*HighCube+3*MidCone+3*MidCube+2*LowCone+2*LowCube) STORED, "
-    retVal += "Auto AS (6*AutoHighCube+6*AutoHighCone+4*AutoMidCube+4*AutoMidCone+3*AutoLowCone+3*AutoLowCube+AutoEngaged+AutoDocked+Mobility) STORED, "
-    retVal += "ChargeStation AS (Docked+Engaged) STORED, "
+    retVal = "TeleCycles AS (TeleSpeaker+TeleAmp) STORED, "
+    retVal += "Stage AS (3*Onstage+5*Trap+Spotlight+2*Harmony+Park) STORED, "
     retVal += (
-        "FirstP AS (GridPoints*"
-        + str(prop.FIRST_GRID_POINTS)
-        + "*(1+Defended)+ChargeStation*"
-        + str(prop.FIRST_BRIDGE)
+        "FirstP AS (TeleCycles*"
+        + str(prop.FIRST_CYCLES)
+        + "*(1+Defended)*"
+        + str(prop.FIRST_DEFENDED) +
+        "+Stage*"
+        + str(prop.FIRST_STAGE)
+        + "+AUTO*"
+        + str(prop.FIRST_AUTO)
         + ") STORED, "
     )
     retVal += (
-        "SecondP AS (GridPoints*"
-        + str(prop.SECOND_GRID_POINTS)
-        + "*(1+Defended)+ChargeStation*"
-        + str(prop.SECOND_BRIDGE)
+        "SecondP AS (TeleCycles*"
+        + str(prop.SECOND_CYCLES)
+        + "+Stage*"
+        + str(prop.SECOND_STAGE)
         + "+Defense*"
         + str(prop.SECOND_DEFENSE)
         + "+Disabled*"
@@ -147,42 +140,30 @@ def processSheet(scout):
 
             scout.setMatchData("Replay", scout.boolfield("S-6"))
 
-            scout.setMatchData("AutoHighCube", scout.countfield("H-10", "K-10", 0))
-            scout.setMatchData("AutoHighCone", scout.countfield("H-11", "K-11", 0))
-            scout.setMatchData("AutoMidCube", scout.countfield("H-13", "K-13", 0))
-            scout.setMatchData("AutoMidCone", scout.countfield("H-14", "K-14", 0))
-            scout.setMatchData("AutoLowCube", scout.countfield("H-16", "K-16", 0))
-            scout.setMatchData("AutoLowCone", scout.countfield("H-17", "K-17", 0))
+            scout.setMatchData("AutoSpeaker", scout.countfield("J-10", "O-10", 0))
+            scout.setMatchData("AutoMidfield", scout.countfield("J-11", "M-11", 0))
 
-            scout.setMatchData("Mobility", scout.boolfield("H-18"))
+            scout.setMatchData("Leave", scout.boolfield("J-12"))
+            scout.setMatchData("AStop", scout.boolfield("J-13"))
 
-            scout.setMatchData("AutoEngaged", scout.boolfield("P-12")*12)
-            if(not scout.boolfield("P-12")):
-                scout.setMatchData("AutoDocked", scout.boolfield("P-11")*8)
-                if(not scout.boolfield("P-11")):
-                    scout.setMatchData("AutoChargeAttempt", scout.boolfield("P-10"))            
+            scout.setMatchData("GroundPickup", scout.boolfield("H-16"))
+            scout.setMatchData("SourcePickup", scout.boolfield("H-17"))
 
-            scout.setMatchData("Engaged", scout.boolfield("Q-12")*10)
-            if(not scout.boolfield("Q-12")):
-                scout.setMatchData("Docked", scout.boolfield("Q-11")*6)
-                if(not scout.boolfield("Q-11")):
-                    scout.setMatchData("ChargeAttempt", scout.boolfield("Q-10"))
-                    if(not scout.boolfield("Q-10")):
-                        scout.setMatchData("Park", scout.boolfield("Q-13"))
+            scout.setMatchData("Defense", scout.boolfield("N-16"))
+            scout.setMatchData("Defended", scout.boolfield("N-17"))
+            scout.setMatchData("Disabled", scout.boolfield("R-16"))
 
-            scout.setMatchData("MidfieldCone", scout.countfield("Q-17", "T-17", 0))
-            scout.setMatchData("MidfieldCube", scout.countfield("Q-16", "T-16", 0))
+            scout.setMatchData("TeleopSpeaker", scout.countfield("X-10", "AK-10", 0))
+            scout.setMatchData("TeleopAmp", scout.countfield("X-11", "AG-11", 0))
+            scout.setMatchData("Amplified", scout.countfield("X-12", "AG-12", 0))
+            scout.setMatchData("Amplification", scout.boolfield("X-13"))
+            scout.setMatchData("Coop", scout.boolfield("X-14"))
 
-            scout.setMatchData("Defense", scout.boolfield("W-10"))
-            scout.setMatchData("Defended", scout.boolfield("W-11"))
-            scout.setMatchData("Disabled", scout.boolfield("W-12"))
-
-            scout.setMatchData("HighCube", scout.countfield("AB-10", "AK-10", 0))
-            scout.setMatchData("HighCone", scout.countfield("AB-11", "AK-11", 0))
-            scout.setMatchData("MidCube", scout.countfield("AB-13", "AK-13", 0))
-            scout.setMatchData("MidCone", scout.countfield("AB-14", "AK-14", 0))
-            scout.setMatchData("LowCube", scout.countfield("AB-16", "AK-16", 0))
-            scout.setMatchData("LowCone", scout.countfield("AB-17", "AK-17", 0))
+            scout.setMatchData("Trap", scout.countfield("AB-14", "AK-14", 0))
+            scout.setMatchData("Onstage", scout.boolfield("AC-16"))
+            scout.setMatchData("Spotlight", scout.boolfield("AC-18"))
+            scout.setMatchData("Park", scout.boolfield("AJ-16"))
+            scout.setMatchData("Harmony", scout.boolfield("AJ-17"))
 
             scout.submit()
         elif type == SheetType.PIT:
@@ -198,14 +179,15 @@ def processSheet(scout):
             weight3 = scout.rangefield("AB-7", 0, 9)
             scout.setPitData("Weight", 100 * weight1 + 10 * weight2 + weight3)
 
-            scout.setPitData("TripleMech", scout.boolfield("Q-10"))
-            scout.setPitData("Cone", scout.boolfield("Q-11"))
-            scout.setPitData("Cube", scout.boolfield("Q-12"))
-            scout.setPitData("FloorPickup", scout.boolfield("Q-13"))
-            scout.setPitData("DoubleSub", scout.boolfield("Q-14"))
-            scout.setPitData("Level1", scout.boolfield("Q-15"))
-            scout.setPitData("Level2", scout.boolfield("Q-16"))
-            scout.setPitData("Level3", scout.boolfield("Q-17"))
+            scout.setPitData("FloorPickup", scout.boolfield("N-10"))
+            scout.setPitData("SourcePickup", scout.boolfield("M-11"))
+            scout.setPitData("Harmony", scout.boolfield("N-12"))
+            scout.setPitData("Amp", scout.boolfield("N-13"))
+            scout.setPitData("Speaker", scout.boolfield("N-14"))
+            scout.setPitData("Trap", scout.boolfield("N-15"))
+            scout.setPitData("Podium", scout.boolfield("N-16"))
+            scout.setPitData("AmpZone", scout.boolfield("N-17"))
+            scout.setPitData("UnderStage", scout.boolfield("N-18"))
 
             scout.setPitData("SillyWheels", scout.boolfield("X-14"))
             scout.setPitData("Swerve", scout.boolfield("X-15"))
@@ -227,37 +209,31 @@ def processSheet(scout):
 
 def generateTeamText(e):
     text = {"auto": "", "teleop1": "", "teleop2": "", "other": ""}
-    text["auto"] += "Low △: " + str(e["AutoLowCone"]) + ", " if e["AutoLowCone"] else ""
-    text["auto"] += "Low ⬜: " + str(e["AutoLowCube"]) + ", " if e["AutoLowCube"] else ""
-    text["auto"] += "Mid △: " + str(e["AutoMidCone"]) + ", " if e["AutoMidCone"] else ""
-    text["auto"] += "Mid ⬜: " + str(e["AutoMidCube"]) + ", " if e["AutoMidCube"] else ""
-    text["auto"] += "High △: " + str(e["AutoHighCone"]) + ", " if e["AutoHighCone"] else ""
-    text["auto"] += "High ⬜: " + str(e["AutoHighCube"]) + ", " if e["AutoHighCube"] else ""
-    text["auto"] += "Docked" + ", " if e["AutoDocked"] else ""
-    text["auto"] += "Engaged" + ", " if e["AutoEngaged"] else ""
-    text["auto"] += "ChargeAttempt" + ", " if e["AutoChargeAttempt"] else ""
-    text["auto"] += "Mobility" + ", " if e["Mobility"] else ""
+    text["auto"] += "Speaker: " + str(e["AutoSpeaker"]) + ", " if e["AutoSpeaker"] else ""
+    text["auto"] += "Midfield: " + str(e["AutoMidfield"]) + ", " if e["AutoMidfield"] else ""
+    text["auto"] += "ASTOP!!!" + ", " if e["AStop"] else ""
+    text["auto"] += "Leave" + ", " if e["Leave"] else ""
     text["auto"] = text["auto"][:-2]
 
-    text["teleop1"] += "Low △: " + str(e["LowCone"]) + ", " if e["LowCone"] else ""
-    text["teleop1"] += "Low ⬜: " + str(e["LowCube"]) + ", " if e["LowCube"] else ""
-    text["teleop1"] += "Mid △: " + str(e["MidCone"]) + ", " if e["MidCone"] else ""
-    text["teleop1"] += "Mid ⬜: " + str(e["MidCube"]) + ", " if e["MidCube"] else ""
-    text["teleop1"] += "High △: " + str(e["HighCone"]) + ", " if e["HighCone"] else ""
-    text["teleop1"] += "High ⬜: " + str(e["HighCube"]) + ", " if e["HighCube"] else ""
+    text["teleop1"] += "Speaker: " + str(e["TeleSpeaker"]) + ", " if e["TeleSpeaker"] else ""
+    text["teleop1"] += "Amp: " + str(e["TeleAmp"]) + ", " if e["TeleAmp"] else ""
+    text["teleop1"] += "Amplified: " + str(e["Amplified"]) + ", " if e["Amplified"] else ""
+    text["teleop1"] += "Ground" + ", " if e["GroundPickup"] else ""
+    text["teleop1"] += "Source" + ", " if e["SourcePickup"] else ""
     text["teleop1"] = text["teleop1"][:-2]
 
-    shorts = e["MidFieldCone"] + e["MidFieldCube"]
-    text["teleop2"] += "Short △: " + str(e["MidfieldCone"]) + ", " if e["MidfieldCone"] else ""
-    text["teleop2"] += "Short ⬜: " + str(e["MidfieldCube"]) + ", " if e["MidfieldCube"] else ""
-    text["teleop2"] += "Docked" + ", " if e["Docked"] else ""
-    text["teleop2"] += "Engaged" + ", " if e["Engaged"] else ""
-    text["teleop2"] += "ChargeAttempt" + ", " if e["ChargeAttempt"] else ""
+    text["teleop2"] += "Trap: " + str(e["Trap"]) + ", " if e["Trap"] else ""
+    text["teleop2"] += "Onstage" + ", " if e["Onstage"] else ""
+    text["teleop2"] += "Spotlight" + ", " if e["Spotlight"] else ""
+    text["teleop2"] += "Park" + ", " if e["Park"] else ""
+    text["teleop2"] += "Harmony" + ", " if e["Harmony"] else ""
     text["teleop2"] = text["teleop2"][:-2]
 
     text["other"] += "Defense, " if e["Defense"] else ""
     text["other"] += "Defended, " if e["Defended"] else ""
     text["other"] += "Disabled, " if e["Disabled"] else ""
+    text["other"] += "Coop, " if e["Coop"] else ""
+    text["other"] += "Amplification, " if e["Amplification"] else ""
     text["other"] = text["other"][:-2]
 
     return text
@@ -269,12 +245,11 @@ def generateChartData(e):
     dp = dict(CHART_FIELDS)
     dp["match"] = e["match"]
 
-    dp["Cones"] += e["Cones"]
-    dp["Cubes"] += e["Cubes"]
-    dp["Auto"] += e["Auto"]
-    dp["GridPoints"] += e["GridPoints"]
-    dp["Cycles"] += e["Cycles"]
-    dp["ChargeStation"] += e["ChargeStation"]
+    dp["AutoSpeaker"] += e["AutoSpeaker"]
+    dp["TeleCycles"] += e["TeleCycles"]
+    dp["TeleSpeaker"] += e["TeleSpeaker"]
+    dp["TeleAmp"] += e["TeleAmp"]
+    dp["Stage"] += e["Stage"]
 
     return dp
 
@@ -282,14 +257,15 @@ def generateChartData(e):
 # Takes a set of team numbers and a string indicating quals or playoffs
 # and returns a prediction for the alliances score and whether or not they will achieve any additional ranking points
 def predictScore(event, teams, level="quals"):
-    linkRP = 0
-    bridgeRP = 0
-    highCones = 0
-    highCubes = 0
-    midCones = 0
-    midCubes = 0
-    low = 0
-    autoBridge = 0
+    noteRP = 0
+    stageRP = 0
+    autoPreload = 0
+    autoStaged = 0
+    autoMidfield = 0
+    maxCycles = 0
+    maxAmps = 0
+    traps = 0
+    onstage = 0
 
     pointsTotal = 0
 
@@ -308,49 +284,35 @@ def predictScore(event, teams, level="quals"):
                 entry.update(DISPLAY_FIELDS)
                 entry.update(HIDDEN_DISPLAY_FIELDS)
 
-        low += entry["LowCone"] + entry["LowCube"] + entry["AutoLowCone"] + entry["AutoLowCube"]
-        highCones += entry["HighCone"] + entry["AutoHighCone"]
-        highCubes += entry["HighCube"] + entry["AutoHighCube"]
-        midCones += entry["MidCone"] + entry["AutoMidCone"]
-        midCubes += entry["MidCube"] + entry["AutoMidCube"]
-        if entry["AutoDocked"] > 4 & autoBridge < 8:
-            autoBridge = 8
-        if entry["AutoEngaged"] > 6:
-            autoBridge = 12
-        pointsTotal += entry["AutoHighCone"] + entry["AutoHighCube"] + entry["AutoMidCone"] + entry["AutoMidCube"] + entry["AutoLowCone"] + entry["AutoLowCube"]
+        maxCycles += entry["TeleCycles"]
+        maxAmps += entry["TeleCycles"] if entry["TeleAmp"] > .5 else 0
+        autoPreload += 1 if entry["AutoSpeaker"] > .5 else 0
+        autoStaged += max((entry["AutoSpeaker"] - 1 - entry["AutoMidfield"]), 0)
+        autoMidfield += entry["AutoMidfield"]
+        traps += entry["Trap"]
+        onstage += 1 if entry["Onstage"] > .5 else 0
+        pointsTotal += entry["Leave"] + 3*entry["Onstage"]+entry["Spotlight"]+2*entry["Harmony"]
 
-    if highCones > 6:
-        midCones += highCones - 6
-        highCones = 6
-    if highCubes > 3:
-        midCubes += highCubes - 3
-        highCubes = 6
-    if midCones > 6:
-        low += midCones - 6
-        midCones = 6
-    if midCubes > 6:
-        low += midCubes - 6
-        midCubes = 6
-    if low > 9:
-        low = 9
-    pointsTotal += highCones*5 + highCubes*5
-    pointsTotal += midCones*3 + midCubes*3
-    pointsTotal += low*2
-    links = min(highCones/2, highCubes)
-    links += min(midCones/2, midCubes)
-    links += low/3
-    pointsTotal += links*5
-    pointsTotal += autoBridge
-    if links > 3.75:
-        linkRP = 1
-    if autoBridge:
-        bridgeRP = 1
+    pointsTotal += max(5*traps, 15)
+    pointsTotal += max(5*autoPreload, 15)
+    pointsTotal += max(5*autoStaged, 15)
+    pointsTotal += max(5*autoMidfield, 15)
+    amps = math.floor(max(maxCycles/4, maxAmps))
+    pointsTotal = amps * 12
+    pointsTotal = 2*max(maxCycles-amps*4, 0)
+    notes = max(autoPreload, 3)+max(autoStaged, 3)+max(autoMidfield, 3) + maxCycles
+    if notes > 18:
+        noteRP = 1
+    if onstage >= 2:
+        if onstage == 3 or traps:
+            stageRP = 1
+
 
     retVal = {"score": 0, "RP1": 0, "RP2": 0}
 
     retVal["score"] = pointsTotal
-    retVal["RP1"] = bridgeRP
-    retVal["RP2"] = linkRP
+    retVal["RP1"] = noteRP
+    retVal["RP2"] = stageRP
 
     return retVal
 

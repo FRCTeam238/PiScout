@@ -1,1 +1,1 @@
-CURRENT_EVENT = "2023nhgrs"
+CURRENT_EVENT = "2023necmp1"
