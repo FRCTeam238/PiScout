@@ -9,22 +9,32 @@ SCOUT_FIELDS = {
     "Team": 0,
     "Match": 0,
     "AutoSpeaker": 0,
+    "Midfield1": 0,
+    "Midfield2": 0,
+    "Midfield3": 0,
+    "Midfield4": 0,
+    "Midfield5": 0,
     "AutoMidfield": 0,
     "Leave": 0,
     "AStop": 0,
     "GroundPickup": 0,
     "SourcePickup": 0,
+    "SourceSteal": 0,
     "Disabled": 0,
     "Defense": 0,
     "Defended": 0,
+    "Wing": 0,
+    "Podium": 0,
+    "Subwoofer": 0,
     "TeleSpeaker": 0,
     "TeleAmp": 0,
     "Amplified": 0,
     "Amplification": 0,
     "Coop": 0,
+    "OnstageAttempt": 0,
     "Onstage": 0,
     "Trap": 0,
-    "Spotlight": 0,
+    "HighNotes": 0,
     "Park": 0,
     "Harmony": 0,
     "Replay": 0,
@@ -141,17 +151,32 @@ def processSheet(scout):
             scout.setMatchData("Replay", scout.boolfield("S-6"))
 
             scout.setMatchData("AutoSpeaker", scout.countfield("J-10", "O-10", 0))
-            scout.setMatchData("AutoMidfield", scout.countfield("J-11", "M-11", 0))
+            midfield1 = scout.boolfield("K-11")
+            midfield2 = scout.boolfield("L-11")
+            midfield3 = scout.boolfield("M-11")
+            midfield4 = scout.boolfield("N-11")
+            midfield5 = scout.boolfield("O-11")
+            scout.setMatchData("Midfield1", midfield1)
+            scout.setMatchData("Midfield2", midfield2)
+            scout.setMatchData("Midfield3", midfield3)
+            scout.setMatchData("Midfield4", midfield4)
+            scout.setMatchData("Midfield5", midfield5)
+            scout.setMatchData("AutoMidfield", midfield1+midfield2+midfield3+midfield4+midfield5)
 
             scout.setMatchData("Leave", scout.boolfield("J-12"))
             scout.setMatchData("AStop", scout.boolfield("J-13"))
 
             scout.setMatchData("GroundPickup", scout.boolfield("H-16"))
             scout.setMatchData("SourcePickup", scout.boolfield("H-17"))
+            scout.setMatchData("SourceSteal", scout.boolfield("H-18"))
 
             scout.setMatchData("Defense", scout.boolfield("N-16"))
             scout.setMatchData("Defended", scout.boolfield("N-17"))
-            scout.setMatchData("Disabled", scout.boolfield("R-16"))
+            scout.setMatchData("Disabled", scout.boolfield("N-18"))
+
+            scout.setMatchData("Wing", scout.boolfield("T-16"))
+            scout.setMatchData("Podium", scout.boolfield("T-17"))
+            scout.setMatchData("Subwoofer", scout.boolfield("T-18"))
 
             scout.setMatchData("TeleopSpeaker", scout.countfield("X-10", "AK-10", 0))
             scout.setMatchData("TeleopAmp", scout.countfield("X-11", "AG-11", 0))
@@ -159,9 +184,11 @@ def processSheet(scout):
             scout.setMatchData("Amplification", scout.boolfield("X-13"))
             scout.setMatchData("Coop", scout.boolfield("X-14"))
 
-            scout.setMatchData("Trap", scout.countfield("AB-14", "AK-14", 0))
-            scout.setMatchData("Onstage", scout.boolfield("AC-16"))
-            scout.setMatchData("Spotlight", scout.boolfield("AC-18"))
+            scout.setMatchData("OnstageAttempt", scout.boolfield("AC-16"))
+            scout.setMatchData("Onstage", scout.boolfield("AD-16"))
+            scout.setMatchData("Trap", scout.countfield("AC-14", "AF-14", 0))
+            scout.setMatchData("HighNotes", scout.countfield("AC-15", "AF-15", 0))
+
             scout.setMatchData("Park", scout.boolfield("AJ-16"))
             scout.setMatchData("Harmony", scout.boolfield("AJ-17"))
 
@@ -210,7 +237,13 @@ def processSheet(scout):
 def generateTeamText(e):
     text = {"auto": "", "teleop1": "", "teleop2": "", "other": ""}
     text["auto"] += "Speaker: " + str(e["AutoSpeaker"]) + ", " if e["AutoSpeaker"] else ""
-    text["auto"] += "Midfield: " + str(e["AutoMidfield"]) + ", " if e["AutoMidfield"] else ""
+    text["auto"] += "Midfield: " if e["AutoMidfield"] else ""
+    text["auto"] += "1," if e["Midfield1"] else ""
+    text["auto"] += "2," if e["Midfield2"] else ""
+    text["auto"] += "3," if e["Midfield3"] else ""
+    text["auto"] += "4," if e["Midfield4"] else ""
+    text["auto"] += "5," if e["Midfield5"] else ""
+    text["auto"] += "  " if e["AutoMidfield"] else ""
     text["auto"] += "ASTOP!!!" + ", " if e["AStop"] else ""
     text["auto"] += "Leave" + ", " if e["Leave"] else ""
     text["auto"] = text["auto"][:-2]
@@ -220,11 +253,15 @@ def generateTeamText(e):
     text["teleop1"] += "Amplified: " + str(e["Amplified"]) + ", " if e["Amplified"] else ""
     text["teleop1"] += "Ground" + ", " if e["GroundPickup"] else ""
     text["teleop1"] += "Source" + ", " if e["SourcePickup"] else ""
+    text["teleop1"] += "Wing" + ", " if e["Wing"] else ""
+    text["teleop1"] += "Podium" + ", " if e["Podium"] else ""
+    text["teleop1"] += "Subwoofer" + ", " if e["Subwoofer"] else ""
     text["teleop1"] = text["teleop1"][:-2]
 
     text["teleop2"] += "Trap: " + str(e["Trap"]) + ", " if e["Trap"] else ""
     text["teleop2"] += "Onstage" + ", " if e["Onstage"] else ""
-    text["teleop2"] += "Spotlight" + ", " if e["Spotlight"] else ""
+    text["teleop2"] += "OnstageAttempt" + ", " if e["OnstageAttempt"] else ""
+    text["teleop2"] += "HighNotes: " + str(e["HighNotes"]) + ", " if e["Spotlight"] else ""
     text["teleop2"] += "Park" + ", " if e["Park"] else ""
     text["teleop2"] += "Harmony" + ", " if e["Harmony"] else ""
     text["teleop2"] = text["teleop2"][:-2]
