@@ -78,7 +78,7 @@ PIT_SCOUT_FIELDS = {
 }
 
 # Define which pit scout fields to display on alliance page
-PIT_DISPLAY_FIELDS = {"Amp": 0, "Speaker": 0, "SillyWheels": 0, "Swerve": 0, "UnderStage": 0}
+PIT_DISPLAY_FIELDS = {"FloorPickup": 0, "Amp": 0, "Speaker": 0, "SillyWheels": 0, "Swerve": 0, "UnderStage": 0}
 
 # Defines the fields displayed on the charts on the team and compare pages
 CHART_FIELDS = {
@@ -98,7 +98,7 @@ class SheetType(IntEnum):
 
 def getDisplayFieldCreate():
     retVal = "TeleCycles AS (TeleSpeaker+TeleAmp) STORED, "
-    retVal += "Stage AS (3*Onstage+5*Trap+Spotlight+2*Harmony+Park) STORED, "
+    retVal += "Stage AS (3*Onstage+5*Trap+HighNotes+2*Harmony+Park) STORED, "
     retVal += (
         "FirstP AS (TeleCycles*"
         + str(prop.FIRST_CYCLES)
@@ -106,7 +106,7 @@ def getDisplayFieldCreate():
         + str(prop.FIRST_DEFENDED) +
         "+Stage*"
         + str(prop.FIRST_STAGE)
-        + "+AUTO*"
+        + "+AutoSpeaker*"
         + str(prop.FIRST_AUTO)
         + ") STORED, "
     )
@@ -115,7 +115,7 @@ def getDisplayFieldCreate():
         + str(prop.SECOND_CYCLES)
         + "+Stage*"
         + str(prop.SECOND_STAGE)
-        + "+Defense*"
+        + "+(1+Defense*"
         + str(prop.SECOND_DEFENSE)
         + "+Disabled*"
         + str(prop.SECOND_DISABLED)
@@ -178,16 +178,16 @@ def processSheet(scout):
             scout.setMatchData("Podium", scout.boolfield("T-17"))
             scout.setMatchData("Subwoofer", scout.boolfield("T-18"))
 
-            scout.setMatchData("TeleopSpeaker", scout.countfield("X-10", "AK-10", 0))
-            scout.setMatchData("TeleopAmp", scout.countfield("X-11", "AG-11", 0))
+            scout.setMatchData("TeleSpeaker", scout.countfield("X-10", "AK-10", 0))
+            scout.setMatchData("TeleAmp", scout.countfield("X-11", "AG-11", 0))
             scout.setMatchData("Amplified", scout.countfield("X-12", "AG-12", 0))
             scout.setMatchData("Amplification", scout.boolfield("X-13"))
             scout.setMatchData("Coop", scout.boolfield("X-14"))
 
             scout.setMatchData("OnstageAttempt", scout.boolfield("AC-16"))
             scout.setMatchData("Onstage", scout.boolfield("AD-16"))
-            scout.setMatchData("Trap", scout.countfield("AC-14", "AF-14", 0))
-            scout.setMatchData("HighNotes", scout.countfield("AC-15", "AF-15", 0))
+            scout.setMatchData("Trap", scout.countfield("AC-17", "AF-17", 0))
+            scout.setMatchData("HighNotes", scout.countfield("AC-18", "AF-18", 0))
 
             scout.setMatchData("Park", scout.boolfield("AJ-16"))
             scout.setMatchData("Harmony", scout.boolfield("AJ-17"))
@@ -207,7 +207,7 @@ def processSheet(scout):
             scout.setPitData("Weight", 100 * weight1 + 10 * weight2 + weight3)
 
             scout.setPitData("FloorPickup", scout.boolfield("N-10"))
-            scout.setPitData("SourcePickup", scout.boolfield("M-11"))
+            scout.setPitData("SourcePickup", scout.boolfield("N-11"))
             scout.setPitData("Harmony", scout.boolfield("N-12"))
             scout.setPitData("Amp", scout.boolfield("N-13"))
             scout.setPitData("Speaker", scout.boolfield("N-14"))
@@ -216,17 +216,13 @@ def processSheet(scout):
             scout.setPitData("AmpZone", scout.boolfield("N-17"))
             scout.setPitData("UnderStage", scout.boolfield("N-18"))
 
-            scout.setPitData("SillyWheels", scout.boolfield("X-14"))
-            scout.setPitData("Swerve", scout.boolfield("X-15"))
+            scout.setPitData("SillyWheels", scout.boolfield("W-11"))
+            scout.setPitData("Swerve", scout.boolfield("W-12"))
 
-            scout.setPitData("PitOrganization", scout.rangefield("AF-13", 1, 3))
-            scout.setPitData("WiringQuality", scout.rangefield("AF-14", 1, 3))
-            scout.setPitData("BumperQuality", scout.rangefield("AF-15", 1, 3))
-            scout.setPitData("Batteries", scout.rangefield("AC-17", 1, 7))
-
-            width1 = scout.rangefield("AB-9", 0, 5)
-            width2 = scout.rangefield("AB-10", 0, 9)
-            scout.setPitData("Width", width1*10+width2)
+            scout.setPitData("PitOrganization", scout.rangefield("AE-11", 1, 3))
+            scout.setPitData("WiringQuality", scout.rangefield("AE-12", 1, 3))
+            scout.setPitData("BumperQuality", scout.rangefield("AE-13", 1, 3))
+            scout.setPitData("Batteries", scout.rangefield("X-16", 1, 7))
 
             scout.submit()
 
@@ -261,7 +257,7 @@ def generateTeamText(e):
     text["teleop2"] += "Trap: " + str(e["Trap"]) + ", " if e["Trap"] else ""
     text["teleop2"] += "Onstage" + ", " if e["Onstage"] else ""
     text["teleop2"] += "OnstageAttempt" + ", " if e["OnstageAttempt"] else ""
-    text["teleop2"] += "HighNotes: " + str(e["HighNotes"]) + ", " if e["Spotlight"] else ""
+    text["teleop2"] += "HighNotes: " + str(e["HighNotes"]) + ", " if e["HighNotes"] else ""
     text["teleop2"] += "Park" + ", " if e["Park"] else ""
     text["teleop2"] += "Harmony" + ", " if e["Harmony"] else ""
     text["teleop2"] = text["teleop2"][:-2]
@@ -328,16 +324,16 @@ def predictScore(event, teams, level="quals"):
         autoMidfield += entry["AutoMidfield"]
         traps += entry["Trap"]
         onstage += 1 if entry["Onstage"] > .5 else 0
-        pointsTotal += entry["Leave"] + 3*entry["Onstage"]+entry["Spotlight"]+2*entry["Harmony"]
+        pointsTotal += entry["Leave"] + 3*entry["Onstage"]+entry["HighNotes"]+2*entry["Harmony"]
 
-    pointsTotal += max(5*traps, 15)
-    pointsTotal += max(5*autoPreload, 15)
-    pointsTotal += max(5*autoStaged, 15)
-    pointsTotal += max(5*autoMidfield, 15)
-    amps = math.floor(max(maxCycles/4, maxAmps))
-    pointsTotal = amps * 12
-    pointsTotal = 2*max(maxCycles-amps*4, 0)
-    notes = max(autoPreload, 3)+max(autoStaged, 3)+max(autoMidfield, 3) + maxCycles
+    pointsTotal += min(5*traps, 15)
+    pointsTotal += min(5*autoPreload, 15)
+    pointsTotal += min(5*autoStaged, 15)
+    pointsTotal += min(5*autoMidfield, 15)
+    amps = math.floor(min(maxCycles/4, maxAmps))
+    pointsTotal += amps * 12
+    pointsTotal += 2*max(maxCycles-amps*4, 0)
+    notes = min(autoPreload, 3)+min(autoStaged, 3)+min(autoMidfield, 3) + maxCycles
     if notes > 18:
         noteRP = 1
     if onstage >= 2:
