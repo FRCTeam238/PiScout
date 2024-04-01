@@ -39,6 +39,8 @@ SCOUT_FIELDS = {
     "Harmony": 0,
     "Replay": 0,
     "Flag": 0,
+    "Passed": 0,
+    "Received": 0
 }
 
 # Defines the fields that are stored in the "averages" and similar tables of the database.
@@ -180,7 +182,8 @@ def processSheet(scout):
 
             scout.setMatchData("TeleSpeaker", scout.countfield("X-10", "AK-10", 0))
             scout.setMatchData("TeleAmp", scout.countfield("X-11", "AG-11", 0))
-            scout.setMatchData("Amplified", scout.countfield("X-12", "AG-12", 0))
+            scout.setMatchData("Passed", scout.boolfield("AF-12"))
+            scout.setMatchData("Received", scout.boolfield("X-12"))
             scout.setMatchData("Amplification", scout.boolfield("X-13"))
             scout.setMatchData("Coop", scout.boolfield("X-14"))
 
@@ -247,6 +250,8 @@ def generateTeamText(e):
     text["teleop1"] += "Speaker: " + str(e["TeleSpeaker"]) + ", " if e["TeleSpeaker"] else ""
     text["teleop1"] += "Amp: " + str(e["TeleAmp"]) + ", " if e["TeleAmp"] else ""
     text["teleop1"] += "Amplified: " + str(e["Amplified"]) + ", " if e["Amplified"] else ""
+    text["teleop1"] += "Passed: " + ", " if e["Passed"] else ""
+    text["teleop1"] += "Passed: " + ", " if e["Received"] else ""
     text["teleop1"] += "Ground" + ", " if e["GroundPickup"] else ""
     text["teleop1"] += "Source" + ", " if e["SourcePickup"] else ""
     text["teleop1"] += "Wing" + ", " if e["Wing"] else ""
