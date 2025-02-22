@@ -154,8 +154,8 @@
                                 
                                 
                                 <th class="col-xs-3 col-sm-1 text-center" data-column="4" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-label="Match"><div class="tablesorter-header-inner">Other</div></th>
-                                <th class="col-xs-3 col-sm-1 text-center" data-column="5" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-label="Match"><div class="tablesorter-header-inner">Flag</div></th>
-                                <th class="hidden-xs col-sm-1 text-center" data-column="6" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-label="Match"><div class="tablesorter-header-inner">Edit</div></th>
+                                <th class="col-xs-3 col-sm-1 text-center" data-column="5" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-label="Match"><div class="tablesorter-header-inner">Comment</div></th>
+                                <th class="hidden-xs col-sm-1 text-center" data-column="6" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" style="-moz-user-select: none;" aria-label="Match"><div class="tablesorter-header-inner">Flag</div></th>
                             </tr>
                         </thead>
                         <tbody aria-live="polite" aria-relevant="all">
@@ -166,8 +166,11 @@
 									<td>${entry['Text']['teleop1']}</td>
 									<td>${entry['Text']['teleop2']}</td>
 									<td>${entry['Text']['other']}</td>
+                           <py:choose test="auth">
+                              <td py:when="1">${entry['Comment']}</td>
+                              <td py:otherwise=""></td>
+                           </py:choose>
 									<td><a class="flag" href="javascript:flag(${entry['Match']}, ${entry['Flag']});">X</a></td>
-									<td class="hidden-xs"><a class="edit" href="/edit?key=${entry['Key']}">E</a></td>
 								</tr>
 							</py:for>
                         </tbody>

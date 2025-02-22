@@ -50,11 +50,11 @@ class ScoutServer(object):
             conn.row_factory = sql.Row
             teams = (
                 conn.cursor()
-                .execute(
+                    .execute(
                     "SELECT DISTINCT TeamNumber from Participation WHERE EventCode=?",
                     (getEvent(),),
                 )
-                .fetchall()
+                    .fetchall()
             )
             data = []
             for i, team in enumerate(teams):
@@ -65,15 +65,15 @@ class ScoutServer(object):
         # Pass off the normal set of columns or columns with the hidden fields depending on authentication
         # if checkAuth(False):
         #    columns = game.DISPLAY_FIELDS
-        #else:
+        # else:
         columns = {**game.DISPLAY_FIELDS, **game.HIDDEN_DISPLAY_FIELDS}
 
         conn = sql.connect(self.datapath())
         conn.row_factory = sql.Row
         eventName = (
             conn.cursor()
-            .execute("SELECT Name from Events WHERE EventCode=?", (getEvent(),))
-            .fetchall()
+                .execute("SELECT Name from Events WHERE EventCode=?", (getEvent(),))
+                .fetchall()
         )
         events = conn.cursor().execute("SELECT * from Events").fetchall()
         conn.close()
@@ -170,19 +170,19 @@ class ScoutServer(object):
             else " FROM " + joinString + "WHERE Flag=0" + eventString + listString
         )
         sqlCommand = (
-            sqlCommandBase + table + noDefense + " GROUP BY Team ORDER BY Rank ASC"
+                sqlCommandBase + table + noDefense + " GROUP BY Team ORDER BY Rank ASC"
         )
         pickListData = conn.cursor().execute(sqlCommand).fetchall()
         if getMode() == "Trends":
             avgData = (
                 conn.cursor()
-                .execute(
+                    .execute(
                     sqlCommandBase
                     + " FROM ScoutRecords WHERE Flag=0"
                     + eventString
                     + " GROUP BY Team ORDER BY Rank ASC",
                 )
-                .fetchall()
+                    .fetchall()
             )
             latestData = pickListData.copy()
             pickListData = []
@@ -197,13 +197,13 @@ class ScoutServer(object):
         if getMode() == "Variance":
             avgData = (
                 conn.cursor()
-                .execute(
+                    .execute(
                     sqlAvgCommandBase
                     + " FROM ScoutRecords WHERE Flag=0"
                     + eventString
                     + " GROUP BY Team ORDER BY Rank ASC",
                 )
-                .fetchall()
+                    .fetchall()
             )
             maxData = pickListData.copy()
             picklistData = []
@@ -228,19 +228,19 @@ class ScoutServer(object):
             else " FROM " + joinString + "WHERE Flag=0" + eventString + listString
         )
         sqlCommand = (
-            sqlCommandBase + table + noDefense + " GROUP BY Team ORDER BY Rank ASC"
+                sqlCommandBase + table + noDefense + " GROUP BY Team ORDER BY Rank ASC"
         )
         dnpData = conn.cursor().execute(sqlCommand).fetchall()
         if getMode() == "Trends":
             avgData = (
                 conn.cursor()
-                .execute(
+                    .execute(
                     sqlCommandBase
                     + " FROM ScoutRecords WHERE Flag=0"
                     + eventString
                     + " GROUP BY Team ORDER BY Rank ASC",
                 )
-                .fetchall()
+                    .fetchall()
             )
             latestData = dnpData.copy()
             dnpData = []
@@ -255,13 +255,13 @@ class ScoutServer(object):
         if getMode() == "Variance":
             avgData = (
                 conn.cursor()
-                .execute(
+                    .execute(
                     sqlAvgCommandBase
                     + " FROM ScoutRecords WHERE Flag=0"
                     + eventString
                     + " GROUP BY Team ORDER BY Rank ASC",
                 )
-                .fetchall()
+                    .fetchall()
             )
             maxData = dnpData.copy()
             dnpData = []
@@ -286,19 +286,19 @@ class ScoutServer(object):
             else " FROM " + joinString + "WHERE Flag=0" + eventString + listString
         )
         sqlCommand = (
-            sqlCommandBase + table + noDefense + " GROUP BY Team ORDER BY Rank ASC"
+                sqlCommandBase + table + noDefense + " GROUP BY Team ORDER BY Rank ASC"
         )
         teamData = conn.cursor().execute(sqlCommand).fetchall()
         if getMode() == "Trends":
             avgData = (
                 conn.cursor()
-                .execute(
+                    .execute(
                     sqlCommandBase
                     + " FROM ScoutRecords WHERE Flag=0"
                     + eventString
                     + " GROUP BY Team ORDER BY Rank ASC",
                 )
-                .fetchall()
+                    .fetchall()
             )
             latestData = teamData.copy()
             teamData = []
@@ -313,13 +313,13 @@ class ScoutServer(object):
         if getMode() == "Variance":
             avgData = (
                 conn.cursor()
-                .execute(
+                    .execute(
                     sqlAvgCommandBase
                     + " FROM ScoutRecords WHERE Flag=0"
                     + eventString
                     + " GROUP BY Team ORDER BY Rank ASC",
                 )
-                .fetchall()
+                    .fetchall()
             )
             maxData = teamData.copy()
             teamData = []
@@ -411,8 +411,15 @@ class ScoutServer(object):
             averages.update(game.HIDDEN_DISPLAY_FIELDS)
         if len(sql_pit):
             pit = sql_pit[0]
+            pit_dict = dict(sql_pit[0])
+            for key in ["PitOrganization", "WiringQuality", "BumperQuality"]:
+                pit_dict[key] = game.Rating(pit[key]).name
+            pit_dict["Pickup"] = game.CoralPickup(pit["Pickup"]).name
+            pit_dict["Drivetrain"] = game.CoralPickup(pit["Pickup"]).name
+            for key in ["L1", "L2", "L3", "L4", "Net", "Proc", "HP", "Shallow", "Deep"]:
+                pit_dict[key] = game.Boolean(pit[key]).name
         else:
-            pit = 0
+            pit_dict = 0
 
         # If we have less than 4 entries, see if we can grab data from a previous event
         lastEvent = 0
@@ -441,6 +448,7 @@ class ScoutServer(object):
             tableEntry = {}
             tableEntry["Match"] = e["Match"]
             tableEntry["Text"] = text
+            tableEntry["Comment"] = e["Comment"]
             tableEntry["Flag"] = e["Flag"]
             tableEntry["FlagAttr"] = [("style", "color: #B20000")] if e["Flag"] else ""
             tableEntry["Key"] = e["ROWID"]
@@ -461,7 +469,7 @@ class ScoutServer(object):
         try:
             # get the picture for a given team
             m = self.get(
-                "http://www.thebluealliance.com/api/v3/team/frc{0}/media/2024".format(
+                "http://www.thebluealliance.com/api/v3/team/frc{0}/media/2025".format(
                     n
                 ),
                 params=headers,
@@ -495,7 +503,7 @@ class ScoutServer(object):
             auth=auth,
             old_averages=oldAverages,
             pitColumns=game.PIT_SCOUT_FIELDS,
-            pitScout=pit,
+            pitScout=pit_dict,
             columns=columns,
             averages=averages,
             comments=comments,
@@ -667,7 +675,7 @@ class ScoutServer(object):
                 if len(seasonEntries) >= 3:
                     oldAverages = getAggregateData(Team=n, Mode="Averages")
                     assert (
-                        len(oldAverages) < 2
+                            len(oldAverages) < 2
                     )  # ensure there aren't two entries for one team
                     if len(oldAverages):
                         teamData.append(oldAverages[0])
@@ -702,7 +710,7 @@ class ScoutServer(object):
                 if len(seasonEntries) >= 3:
                     oldAverages = getAggregateData(Team=n, Mode="Averages")
                     assert (
-                        len(oldAverages) < 2
+                            len(oldAverages) < 2
                     )  # ensure there aren't two entries for one team
                     if len(oldAverages):
                         teamData.append(oldAverages[0])
@@ -728,7 +736,7 @@ class ScoutServer(object):
 
         # Calculate win probability. Currently uses regression from 2016 data, this should be updated
         prob_red = 1 / (1 + math.e ** (-0.08099 * (red_score - blue_score)))
-        red_win=round(prob_red * 100, 1)
+        red_win = round(prob_red * 100, 1)
         events = conn.cursor().execute("SELECT * from Events").fetchall()
         conn.close()
 
@@ -736,7 +744,7 @@ class ScoutServer(object):
         page = tmpl.generate(
             session=cherrypy.session,
             red_win=red_win,
-            blue_win=round(100-red_win,1),
+            blue_win=round(100 - red_win, 1),
             red_score=red_score,
             blue_score=blue_score,
             red_data=redData,
@@ -778,10 +786,10 @@ class ScoutServer(object):
             level = "quals"
             if match["comp_level"] != "qm":
                 match["num"] = (
-                    match["comp_level"].upper()
-                    + str(match["set_number"])
-                    + "_"
-                    + str(match["match_number"])
+                        match["comp_level"].upper()
+                        + str(match["set_number"])
+                        + "_"
+                        + str(match["match_number"])
                 )
                 level = "playoffs"
             else:
@@ -813,12 +821,7 @@ class ScoutServer(object):
 
     # Used by the scanning program to submit data, and used by comment system to submit data
     @cherrypy.expose()
-    def submit(self, auth="", data="", pitData="", event="", team="", comment=""):
-        if not (data or team or pitData):
-            return """
-                <h1>FATAL ERROR</h1>
-                <h3>DATA CORRUPTION</h3>"""
-
+    def submit(self, auth="", data="", pitData="", event="", team="", comment="", clear=""):
         if data == "json":
             return "[]"  # bogus json for local version
 
@@ -858,11 +861,18 @@ class ScoutServer(object):
             conn.close()
             raise cherrypy.HTTPRedirect("/team?n=" + str(team))
 
-        # If team is not defined, this should be scout data. First check auth key
+        # If team is not defined, this should be scout data or clear. First check auth key
         if auth == serverinfo.AUTH:
+            if clear == "match":
+                cursor.execute(
+                    "DELETE from ScoutRecords WHERE EventCode=?",
+                    (event,),
+                )
+                conn.commit()
+                conn.close()
             if data:
                 d = literal_eval(data)
-
+                team = d["Team"]
                 # Check if data should be flagged due to conflicting game specific values
                 flag = game.autoFlag(d)
 
@@ -875,12 +885,12 @@ class ScoutServer(object):
                                 item
                                 for item in m
                                 if (item["match_number"] == d["Match"])
-                                and (item["comp_level"] == "qm")
+                                   and (item["comp_level"] == "qm")
                             )
                         )
                         teams = (
-                            match["alliances"]["blue"]["team_keys"]
-                            + match["alliances"]["red"]["team_keys"]
+                                match["alliances"]["blue"]["team_keys"]
+                                + match["alliances"]["red"]["team_keys"]
                         )
                         if not "frc" + str(d["Team"]) in teams:
                             flag = 1
@@ -888,11 +898,11 @@ class ScoutServer(object):
                     pass
 
                 # If replay is marked, replace previous data
-                if d["Replay"]:  # replay
-                    cursor.execute(
-                        "DELETE from ScoutRecords WHERE Team=? AND Match=? AND EventCode=?",
-                        (str(d["Team"]), str(d["Match"]), event),
-                    )
+                # if d["Replay"]:  # replay
+                #     cursor.execute(
+                #         "DELETE from ScoutRecords WHERE Team=? AND Match=? AND EventCode=?",
+                #         (str(d["Team"]), str(d["Match"]), event),
+                #     )
 
                 # Insert data into database
                 cursor.execute(
@@ -906,11 +916,11 @@ class ScoutServer(object):
                     "INSERT OR IGNORE INTO Picklist(EventCode,TeamNumber,List) VALUES(?,?,?)",
                     (event, (d["Team"]), "Unassigned"),
                 )
+                tempString = "INSERT INTO ScoutRecords VALUES (?," + ",".join([str(a) for a in d.values()])
+                tempString += ",?)"
                 cursor.execute(
-                    "INSERT INTO ScoutRecords VALUES (?,"
-                    + ",".join([str(a) for a in d.values()])
-                    + ")",
-                    (event,),
+                    tempString,
+                    (event, comment),
                 )
                 conn.commit()
                 conn.close()
@@ -931,13 +941,30 @@ class ScoutServer(object):
                     "UPDATE Teams SET " + values + " WHERE TeamNumber=?",
                     (d["TeamNumber"],),
                 )
+            if comment:
+                comments = cursor.execute(
+                    "SELECT Comments FROM Teams WHERE TeamNumber=?", (d["TeamNumber"],)
+                ).fetchone()
+                if comments[0] is None:
+                    cursor.execute(
+                        "UPDATE Teams SET Comments=? WHERE TeamNumber=?", (comment, d["TeamNumber"])
+                    )
+                else:
+                    existing = convertStringToArray(comments[0])
+                    existing.append(comment)
+                    cursor.execute(
+                        "UPDATE Teams SET Comments=? WHERE TeamNumber=?",
+                        (convertArrayToString(existing), d["TeamNumber"]),
+                    )
                 conn.commit()
                 conn.close()
-                return ""
+            else:
+                conn.commit()
+                conn.close()
         else:
             raise cherrypy.HTTPError(401, "Error: Not authorized to submit match data")
 
-    #page fo deleting match data
+    # page fo deleting match data
     @cherrypy.expose()
     def delete(self, key="", auth="", **params):
         sessionCheck()
@@ -952,7 +979,7 @@ class ScoutServer(object):
         conn = sql.connect(self.datapath())
         conn.row_factory = sql.Row
         cursor = conn.cursor()
-        cursor.execute("DELETE from ScoutRecords WHERE rowid=?",(key,))
+        cursor.execute("DELETE from ScoutRecords WHERE rowid=?", (key,))
         conn.commit()
         conn.close()
 
@@ -982,7 +1009,7 @@ class ScoutServer(object):
             conn.close()
             if server.localInstance:
                 with open("editQueue.txt", "a+") as file:
-                    params['key']= key
+                    params['key'] = key
                     file.write(str(params) + "\n")
 
         # Grab all match data entries from the event, with flagged entries first, then sorted by team, then match
@@ -1220,6 +1247,7 @@ class ScoutServer(object):
             tableFields = ""
             for key in game.SCOUT_FIELDS:
                 tableFields += key + " integer, "
+            tableFields += """"Comment" TEXT, """
             tableFields += game.getDisplayFieldCreate()
             cursor.execute(
                 """CREATE TABLE "ScoutRecords" ("EventCode" TEXT, """
@@ -1288,34 +1316,34 @@ def getAggregateData(Team="", Event="", Mode=""):
     eventString = (" AND EventCode='" + Event + "'") if Event else ""
     if Mode == "Trends":
         table = (
-            " FROM (Select * from (SELECT *, row_number() over (partition by Team order by match desc) as match_rank from ScoutRecords WHERE Flag=0"
-            + eventString
-            + teamString
-            + ") where match_rank <= 3)"
+                " FROM (Select * from (SELECT *, row_number() over (partition by Team order by match desc) as match_rank from ScoutRecords WHERE Flag=0"
+                + eventString
+                + teamString
+                + ") where match_rank <= 3)"
         )
     elif not Event:
         table = (
-            " FROM (Select * from (SELECT *, row_number() over (partition by Team order by EndDate desc, match desc) as match_rank from ScoutRecords INNER JOIN Events On ScoutRecords.EventCode=Events.EventCode WHERE Flag=0"
-            + eventString
-            + teamString
-            + ") where match_rank <= 6)"
+                " FROM (Select * from (SELECT *, row_number() over (partition by Team order by EndDate desc, match desc) as match_rank from ScoutRecords INNER JOIN Events On ScoutRecords.EventCode=Events.EventCode WHERE Flag=0"
+                + eventString
+                + teamString
+                + ") where match_rank <= 6)"
         )
     else:
         table = " FROM ScoutRecords WHERE Flag=0" + eventString + teamString
     sqlCommand = (
-        sqlCommandBase + table + noDefense + " GROUP BY Team ORDER BY Team DESC"
+            sqlCommandBase + table + noDefense + " GROUP BY Team ORDER BY Team DESC"
     )
     data = conn.cursor().execute(sqlCommand).fetchall()
     if Mode == "Trends":
         avgData = (
             conn.cursor()
-            .execute(
+                .execute(
                 sqlCommandBase
                 + " FROM ScoutRecords WHERE Flag=0"
                 + eventString
                 + " GROUP BY Team ORDER BY Team DESC",
             )
-            .fetchall()
+                .fetchall()
         )
         latestData = data.copy()
         data = []
@@ -1330,13 +1358,13 @@ def getAggregateData(Team="", Event="", Mode=""):
     if Mode == "Variance":
         avgData = (
             conn.cursor()
-            .execute(
+                .execute(
                 sqlAvgCommandBase
                 + " FROM ScoutRecords WHERE Flag=0"
                 + eventString
                 + " GROUP BY Team ORDER BY Team DESC",
             )
-            .fetchall()
+                .fetchall()
         )
         maxData = data.copy()
         data = []
@@ -1349,11 +1377,11 @@ def getAggregateData(Team="", Event="", Mode=""):
                     rowData[key] = round(row[key] - avgData[i][key], 2)
             data.append(rowData)
     conn.close()
-   # for team in data:
-   #     team["FirstP"] = (
-   #         team["CargoPoints"] * prop.FIRST_CARGO_POINTS
-   #         + team["Hangar"] * prop.FIRST_HANGAR
-   #     )
+    # for team in data:
+    #     team["FirstP"] = (
+    #         team["CargoPoints"] * prop.FIRST_CARGO_POINTS
+    #         + team["Hangar"] * prop.FIRST_HANGAR
+    #     )
     return data
 
 
@@ -1411,7 +1439,7 @@ localConf = {
     "/favicon.ico": {
         "tools.staticfile.on": True,
         "tools.staticfile.filename": os.path.abspath(os.getcwd())
-        + "./web/static/img/favicon.ico",
+                                     + "./web/static/img/favicon.ico",
     },
     "global": {"server.socket_port": 8000},
 }
@@ -1426,7 +1454,7 @@ remoteConf = {
     "/favicon.ico": {
         "tools.staticfile.on": True,
         "tools.staticfile.filename": os.path.abspath(os.getcwd())
-        + "./web/static/img/favicon.ico",
+                                     + "./web/static/img/favicon.ico",
     },
     "global": {"server.socket_host": "0.0.0.0", "server.socket_port": 80},
 }

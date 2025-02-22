@@ -1,4 +1,5 @@
 import ast
+import csv
 
 import cv2
 import os
@@ -47,14 +48,116 @@ class PiScout:
             files = set(os.listdir("Sheets"))  # grabs all file names as a set
             added = files - f  # check if any files were added
             for file in added:
-                if ".jpg" in file or ".png" in file or ".bmp" in file:
-                    retval = self.loadsheet("Sheets/" + file)
+                if ".csv" in file:
+                    retval = self.processCSV("Sheets/" + file)
                     # If loading succeeds, process and add to the list of existing files, if the loading has a critical failure, add the file to the list. If the load has a temporary failure, retval is 0 and the file will be reprocessed on the next pass
                     if retval == 1:
-                        game.processSheet(self)
+                        #game.processSheet(self)
                         f.add(file)
                     elif retval == -1:
                         f.add(file)
+
+    def processCSV(self, filepath):
+        print("Loading a new file: " + filepath)
+        if filepath.count("match"):
+            with open(filepath, "r") as file:
+                total = sum(1 for line in file)
+                file.seek(0)
+                reader = csv.reader(file)
+                requests.post(
+                     "http://127.0.0.1:8000/submit",
+                     data={
+                         "event": CURRENT_EVENT,
+                         "clear": "match",
+                         "auth": serverinfo.AUTH,
+                     },
+                )
+                skip = 0
+                print(str(total) + " Total records")
+                processed = 0
+                for row in reader:
+                    if skip == 0:
+                        skip = 1
+                        continue
+                    processed += 1
+                    if(processed %10 == 0):
+                        print("Processed " + str(processed) + " of " + str(total) + " records")
+                    matchData = dict(game.SCOUT_FIELDS)
+                    comment = ""
+                    for num, key in enumerate(game.IMPORT_FIELDS):
+                        if row[num]:
+                            if (key in matchData) or key in ["Endgame", "DefenseDefended", "Comments"]:
+                                if key == "StartingPosition":
+                                    matchData[key] = game.StartingPosition[row[num]].value
+                                elif key in ["NoShow", "Leave", "AutoDislodge", "AStop", "TeleDislodge", "CrossedField", "Disabled", "Coop"]:
+                                    matchData[key] = game.Boolean[row[num]].value
+                                elif key == "CagePosition":
+                                    matchData[key] = game.CagePosition[row[num]].value
+                                elif key in ["AutoCoralPickup", "TeleCoralPickup"]:
+                                    matchData[key] = game.CoralPickup[row[num]].value
+                                elif key == "Endgame":
+                                    temp = game.Endgame[row[num]].value
+                                    if temp == -1:
+                                        matchData["FailedClimb"] = 1
+                                    else:
+                                        matchData["Barge"] = temp
+                                elif key == "DefenseDefended":
+                                    temp = game.Defense[row[num]].value
+                                    if temp in [1, 3]:
+                                        matchData["Defense"] = 1
+                                    if temp in [2, 3]:
+                                        matchData["Defended"] = 1
+                                elif key == "Card":
+                                    matchData[key] = game.Cards[row[num]].value
+                                elif key == "Comments":
+                                    comment = row[num]
+                                else:
+                                    matchData[key] = round(float(row[num]))
+                    requests.post(
+                        "http://127.0.0.1:8000/submit",
+                        data={
+                            "event": CURRENT_EVENT,
+                            "data": str(matchData),
+                            "auth": serverinfo.AUTH,
+                            "comment": comment
+                        },
+                    )
+        else:
+            with open(filepath, "r") as file:
+                reader = csv.reader(file)
+                skip = 0
+                for row in reader:
+                    if skip == 0:
+                        skip = 1
+                        continue
+                    pitData = dict(game.PIT_SCOUT_FIELDS)
+                    comment = ""
+                    for num, key in enumerate(game.PIT_IMPORT_FIELDS):
+                        if row[num]:
+                            if (key in pitData) or key in ["Comments"]:
+                                if key in ["PitOrganization", "WiringQuality", "BumperQuality"]:
+                                    pitData[key] = game.Rating[row[num]].value
+                                elif key == "Drivetrain":
+                                    pitData[key] = game.Drivetrain[row[num]].value
+                                elif key == "Comments":
+                                    comment = row[num]
+                                elif key in ["TeamNumber", "Batteries", "Weight", "Width"]:
+                                    pitData[key] = row[num]
+                                elif key == "Pickup":
+                                    pitData[key] = game.CoralPickup[row[num]].value
+                                else:
+                                    pitData[key] = game.Boolean[row[num]].value
+                    requests.post(
+                        "http://127.0.0.1:8000/submit",
+                        data={
+                            "event": CURRENT_EVENT,
+                            "pitData": str(pitData),
+                            "auth": serverinfo.AUTH,
+                            "comment": comment
+                        },
+                    )
+        print("Processing complete")
+        return 1
 
     # Loads a new scout sheet from an image
     # Processes the image and stores the result in self.sheet
