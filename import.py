@@ -18,6 +18,7 @@ try:  # post it to piscout's ip address
             reader = csv.reader(file)
             for row in reader:
                 matchData = dict(game.SCOUT_FIELDS)
+                importData = dict(game.IMPORT_FIELDS)
                 if skip == 0:
                     skip = 1
                     continue
