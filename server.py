@@ -412,12 +412,13 @@ class ScoutServer(object):
         if len(sql_pit):
             pit = sql_pit[0]
             pit_dict = dict(sql_pit[0])
-            for key in ["PitOrganization", "WiringQuality", "BumperQuality"]:
-                pit_dict[key] = game.Rating(pit[key]).name
-            pit_dict["Pickup"] = game.CoralPickup(pit["Pickup"]).name
-            pit_dict["Drivetrain"] = game.CoralPickup(pit["Pickup"]).name
-            for key in ["L1", "L2", "L3", "L4", "Net", "Proc", "HP", "Shallow", "Deep"]:
-                pit_dict[key] = game.Boolean(pit[key]).name
+            if pit["PitOrganization"] is not None:
+                for key in ["PitOrganization", "WiringQuality", "BumperQuality"]:
+                    pit_dict[key] = game.Rating(pit[key]).name
+                pit_dict["Pickup"] = game.CoralPickup(pit["Pickup"]).name
+                pit_dict["Drivetrain"] = game.CoralPickup(pit["Pickup"]).name
+                for key in ["L1", "L2", "L3", "L4", "Net", "Proc", "HP", "Shallow", "Deep"]:
+                    pit_dict[key] = game.Boolean(pit[key]).name
         else:
             pit_dict = 0
 
@@ -1108,18 +1109,18 @@ class ScoutServer(object):
                         match["alliances"]["blue"]["team_keys"][2][3:],
                     ]
                     blueResult = game.predictScore(getEvent(), blueTeams)
-                    blueRP = blueResult["RP1"] + blueResult["RP2"]
+                    blueRP = blueResult["RP1"] + blueResult["RP2"] + blueResult["RP3"]
                     redTeams = [
                         match["alliances"]["red"]["team_keys"][0][3:],
                         match["alliances"]["red"]["team_keys"][1][3:],
                         match["alliances"]["red"]["team_keys"][2][3:],
                     ]
                     redResult = game.predictScore(getEvent(), redTeams)
-                    redRP = redResult["RP1"] + redResult["RP2"]
+                    redRP = redResult["RP1"] + redResult["RP2"] + redResult["RP3"]
                     if blueResult["score"] > redResult["score"]:
-                        blueRP += 2
+                        blueRP += 3
                     elif redResult["score"] > blueResult["score"]:
-                        redRP += 2
+                        redRP += 3
                     else:
                         redRP += 1
                         blueRP += 1

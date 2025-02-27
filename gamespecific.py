@@ -14,8 +14,8 @@ class StartingPosition(Enum):
     DS3 = 3
 
 class CagePosition(Enum):
-    DeepPos = 1
-    ShallowPos = 2
+    Deep = 1
+    Shallow = 2
 
 class CoralPickup(Enum):
     No = 0
@@ -230,7 +230,7 @@ def getDisplayFieldCreate():
     retVal += "AutoCoral AS (AutoCoralLvl1+AutoCoralLvl2+AutoCoralLvl3+AutoCoralLvl4) STORED, "
     retVal += "TeleCoral AS (TeleCoralLvl1+TeleCoralLvl2+TeleCoralLvl3+TeleCoralLvl4) STORED, "
     retVal += "CoralPoints AS (AutoCoralLvl1*3+AutoCoralLvl2*4+AutoCoralLvl3*6+AutoCoralLvl4*7+TeleCoralLvl1*2+TeleCoralLvl2*3+TeleCoralLvl3*4+TeleCoralLvl4*5) STORED, "
-    retVal += "Points AS (AlgaePoints+CoralPoints+Barge) STORED, "
+    retVal += "Points AS (AlgaePoints+CoralPoints+Barge+3*Leave) STORED, "
     return retVal
 
 # Takes an entry from the Scout database table and generates text for display on the team page.
@@ -300,65 +300,79 @@ def generateChartData(e):
 # Takes a set of team numbers and a string indicating quals or playoffs
 # and returns a prediction for the alliances score and whether or not they will achieve any additional ranking points
 def predictScore(event, teams, level="quals"):
-    # noteRP = 0
-    # stageRP = 0
-    # autoPreload = 0
-    # autoStaged = 0
-    # autoMidfield = 0
-    # maxCycles = 0
-    # maxAmps = 0
-    # traps = 0
-    # onstage = 0
-    #
-    # pointsTotal = 0
-    #
-    # for n in teams:
-    #     average = server.getAggregateData(Team=n, Event=event, Mode="Averages")
-    #     assert len(average) < 2
-    #     if len(average):
-    #         entry = average[0]
-    #     else:
-    #         average = server.getAggregateData(Team=n, Mode="Averages")
-    #         assert len(average) < 2
-    #         if len(average):
-    #             entry = average[0]
-    #         else:
-    #             entry = dict(SCOUT_FIELDS)
-    #             entry.update(DISPLAY_FIELDS)
-    #             entry.update(HIDDEN_DISPLAY_FIELDS)
-    #
-    #     maxCycles += entry["TeleCycles"]
-    #     maxAmps += entry["TeleCycles"] if entry["TeleAmp"] > .5 else 0
-    #     autoPreload += 1 if entry["AutoSpeaker"] > .5 else 0
-    #     autoStaged += max((entry["AutoSpeaker"] - 1 - entry["AutoMidfield"]), 0)
-    #     autoMidfield += entry["AutoMidfield"]
-    #     traps += entry["Trap"]
-    #     onstage += 1 if entry["Onstage"] > .5 else 0
-    #     pointsTotal += entry["Leave"] + 3*entry["Onstage"]+entry["HighNotes"]+2*entry["Harmony"]
-    #
-    # pointsTotal += min(5*traps, 15)
-    # pointsTotal += min(5*autoPreload, 15)
-    # pointsTotal += min(5*autoStaged, 15)
-    # pointsTotal += min(5*autoMidfield, 15)
-    # amps = math.floor(min(maxCycles/4, maxAmps))
-    # pointsTotal += amps * 12
-    # pointsTotal += 2*max(maxCycles-amps*4, 0)
-    # notes = min(autoPreload, 3)+min(autoStaged, 3)+min(autoMidfield, 3) + maxCycles
-    # if notes > 18:
-    #     noteRP = 1
-    # if onstage >= 2:
-    #     if onstage == 3 or traps:
-    #         stageRP = 1
-    #
-
+    Leave = 0
+    AutoCoral = 0
+    L4 = 0
+    L3 = 0
+    L2 = 0
+    L1 = 0
+    Net = 0
+    Proc = 0
+    Barge = 0
     pointsTotal = 0
-    noteRP = 0
-    stageRP = 0
-    retVal = {"score": 0, "RP1": 0, "RP2": 0}
+
+    for n in teams:
+        average = server.getAggregateData(Team=n, Event=event, Mode="Averages")
+        assert len(average) < 2
+        if len(average):
+            entry = average[0]
+        else:
+            average = server.getAggregateData(Team=n, Mode="Averages")
+            assert len(average) < 2
+            if len(average):
+                entry = average[0]
+            else:
+                entry = dict(SCOUT_FIELDS)
+                entry.update(DISPLAY_FIELDS)
+                entry.update(HIDDEN_DISPLAY_FIELDS)
+
+
+        autoBonus = 2*entry["AutoCoralLvl4"]+2*entry["AutoCoralLvl3"]+entry["AutoCoralLvl2"]+entry["AutoCoralLvl1"]
+        L4 += entry["AutoCoralLvl4"] + entry["TeleCoralLvl4"]
+        L3 += entry["AutoCoralLvl3"] + entry["TeleCoralLvl3"]
+        L2 += entry["AutoCoralLvl2"] + entry["TeleCoralLvl2"]
+        L1 += entry["AutoCoralLvl1"] + entry["TeleCoralLvl1"]
+        Net += entry["AutoNet"] + entry["TeleNet"]
+        Proc += entry["AutoProcessor"] + entry["TeleProcessor"]
+        Barge += entry["Barge"]
+        pointsTotal += entry["Leave"] * 3 + entry["Barge"] + autoBonus
+        if entry["Leave"] > .5:
+            Leave += 1
+        if entry["AutoCoralLvl4"]+entry["AutoCoralLvl3"]+entry["AutoCoralLvl2"]+entry["AutoCoralLvl1"] > .5:
+            AutoCoral += 1
+
+    pointsTotal += 4*min(Net, 9)
+    Proc = min(Proc, 9-Net)
+    pointsTotal += 2*Proc
+    if L4 > 12:
+        L4 = 12
+        L3 += L4-12
+    if L3 > 12:
+        L3 = 12
+        L2 += L3-12
+    if L2 > 12:
+        L2 = 12
+        L1 += L2-12
+    if L1 > 20:
+        L1 = 20
+    pointsTotal += L4*5 + L3*4 + L2*3 + L1*2
+
+    retVal = {"score": 0, "RP1": 0, "RP2": 0, "RP3": 0}
+
+    if Leave == 3 and AutoCoral:
+        retVal["RP1"] = 1
+    if Barge >= 12:
+        retVal["RP3"] = 1
+    Levels = 0
+    Levels += 1 if (L4 >= 5) else 0
+    Levels += 1 if (L3 >= 5) else 0
+    Levels += 1 if (L2 >= 5) else 0
+    Levels += 1 if (L1 >= 5) else 0
+    Levels += 1 if (Proc >= 2) else 0
+    if Levels >= 4:
+        retVal["RP2"] = 1
 
     retVal["score"] = pointsTotal
-    retVal["RP1"] = noteRP
-    retVal["RP2"] = stageRP
 
     return retVal
 

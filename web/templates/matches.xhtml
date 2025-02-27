@@ -69,19 +69,23 @@
 										<py:if test="match['redPredict']['score'] >= match['bluePredict']['score']">
 											<p>Red + ${round(match['redPredict']['score']- match['bluePredict']['score'],0)}</p>
 											<p>
-												<py:if test="match['redPredict']['RP1']">RC</py:if>
-												<py:if test="match['redPredict']['RP2']">RH</py:if>
-												<py:if test="match['bluePredict']['RP1']">BC</py:if>
-												<py:if test="match['bluePredict']['RP2']">BH</py:if>
+												<py:if test="match['redPredict']['RP1']">R1</py:if>
+												<py:if test="match['redPredict']['RP2']">R2</py:if>
+                                    <py:if test="match['redPredict']['RP3']">R3</py:if>
+												<py:if test="match['bluePredict']['RP1']">B1</py:if>
+												<py:if test="match['bluePredict']['RP2']">B2</py:if>
+                                    <py:if test="match['bluePredict']['RP3']">B3</py:if>
 											</p>
 										</py:if>
 										<py:if test="match['bluePredict']['score'] > match['redPredict']['score']">
 											<p>Blue + ${round(match['bluePredict']['score']- match['redPredict']['score'],0)}</p>
 											<p>
-												<py:if test="match['bluePredict']['RP1']">BC </py:if>
-												<py:if test="match['bluePredict']['RP2']">BH </py:if>
-												<py:if test="match['redPredict']['RP1']">RC </py:if>
-												<py:if test="match['redPredict']['RP2']">RH </py:if>
+                                    <py:if test="match['bluePredict']['RP1']">B1</py:if>
+												<py:if test="match['bluePredict']['RP2']">B2</py:if>
+                                    <py:if test="match['bluePredict']['RP3']">B3</py:if>
+												<py:if test="match['redPredict']['RP1']">R1</py:if>
+												<py:if test="match['redPredict']['RP2']">R2</py:if>
+                                    <py:if test="match['redPredict']['RP3']">R3</py:if>
 											</p>
 										</py:if>
 									</td>
@@ -100,8 +104,10 @@
 											<p>
 												<py:if test="match['redPredict']['RP1']">+</py:if>
 												<py:if test="match['redPredict']['RP2']">+</py:if>
+                                    <py:if test="match['redPredict']['RP3']">+</py:if>
 												<py:if test="match['bluePredict']['RP1']">-</py:if>
 												<py:if test="match['bluePredict']['RP2']">-</py:if>
+                                    <py:if test="match['bluePredict']['RP3']">-</py:if>
 											</p>
 										</py:if>
 										<py:if test="match['bluePredict']['score'] >= match['redPredict']['score']">
@@ -109,8 +115,10 @@
 											<p>
 												<py:if test="match['bluePredict']['RP1']">+</py:if>
 												<py:if test="match['bluePredict']['RP2']">+</py:if>
+                                    <py:if test="match['bluePredict']['RP3']">+</py:if>
 												<py:if test="match['redPredict']['RP1']">-</py:if>
 												<py:if test="match['redPredict']['RP2']">-</py:if>
+                                    <py:if test="match['redPredict']['RP3']">-</py:if>
 											</p>
 										</py:if>
 									</td>
