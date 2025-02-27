@@ -61,6 +61,8 @@ class PiScout:
         print("Loading a new file: " + filepath)
         if filepath.count("match"):
             with open(filepath, "r") as file:
+                if os.path.isfile("queue.txt"):
+                    os.remove("queue.txt")
                 total = sum(1 for line in file)
                 file.seek(0)
                 reader = csv.reader(file)
@@ -122,8 +124,11 @@ class PiScout:
                             "comment": comment
                         },
                     )
+                    with open("queue.txt", "a+") as file:
+                        file.write(str(matchData) + "\n")
         else:
             with open(filepath, "r") as file:
+                os.remove("pitQueue.txt")
                 reader = csv.reader(file)
                 skip = 0
                 for row in reader:
@@ -156,6 +161,8 @@ class PiScout:
                             "comment": comment
                         },
                     )
+                    with open("pitQueue.txt", "a+") as file:
+                        file.write(str(self.pitData) + "\n")
         print("Processing complete")
         return 1
 
