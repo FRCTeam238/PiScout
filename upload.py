@@ -43,7 +43,7 @@ if os.path.isfile("pitQueue.txt"):
             print("Uploading pit entries")
             for line in file:
                 requests.post(
-                    serverinfo.server + "/submit",
+                    serverinfo.SERVER + "/submit",
                     data={
                         "event": CURRENT_EVENT,
                         "pitData": line,
