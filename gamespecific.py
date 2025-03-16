@@ -9,18 +9,20 @@ class Boolean(Enum):
     TRUE = 1
 
 class StartingPosition(Enum):
+    No = 0
     DS1 = 1
     Middle = 2
     DS3 = 3
 
 class CagePosition(Enum):
+    No = 0
     Deep = 1
     Shallow = 2
 
 class CoralPickup(Enum):
     No = 0
     Ground = 1
-    CStation = 2
+    Cstation = 2
     Both = 3
 
 class Endgame(Enum):
@@ -42,11 +44,13 @@ class Cards(Enum):
     Red = 2
 
 class Rating(Enum):
+    No = 0
     Poor = 1
     OK = 2
     Good = 3
 
 class Drivetrain(Enum):
+    No = 0
     Omni = 1
     Swerve = 2
     Tank = 3
