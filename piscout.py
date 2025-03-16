@@ -128,7 +128,8 @@ class PiScout:
                         file.write(str(matchData) + "\n")
         else:
             with open(filepath, "r") as file:
-                os.remove("pitQueue.txt")
+                if os.path.isfile("pitQueue.txt"):
+                    os.remove("pitQueue.txt")
                 reader = csv.reader(file)
                 skip = 0
                 for row in reader:
@@ -162,7 +163,7 @@ class PiScout:
                         },
                     )
                     with open("pitQueue.txt", "a+") as file:
-                        file.write(str(self.pitData) + "\n")
+                        file.write(str(pitData) + "\n")
         print("Processing complete")
         return 1
 

@@ -871,6 +871,7 @@ class ScoutServer(object):
                 )
                 conn.commit()
                 conn.close()
+                return
             if data:
                 d = literal_eval(data)
                 team = d["Team"]
