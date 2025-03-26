@@ -75,7 +75,7 @@ class PiScout:
                      },
                 )
                 skip = 0
-                print(str(total) + " Total records")
+                print(str(total-1) + " Total records")
                 processed = 0
                 for row in reader:
                     if skip == 0:
@@ -91,7 +91,7 @@ class PiScout:
                             if (key in matchData) or key in ["Endgame", "DefenseDefended", "Comments"]:
                                 if key == "StartingPosition":
                                     matchData[key] = game.StartingPosition[row[num]].value
-                                elif key in ["NoShow", "Leave", "AutoDislodge", "AStop", "TeleDislodge", "CrossedField", "Disabled", "Coop"]:
+                                elif key in ["NoShow", "Leave", "AStop", "CrossedField", "Disabled", "Coop"]:
                                     matchData[key] = game.Boolean[row[num]].value
                                 elif key == "CagePosition":
                                     matchData[key] = game.CagePosition[row[num]].value

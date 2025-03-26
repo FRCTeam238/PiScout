@@ -251,7 +251,7 @@ def generateTeamText(e):
     text["auto"] += "Leave, " if e["Leave"] else ""
     text["auto"] += "Net:" + str(e["AutoNet"]) + ", " if e["AutoNet"] else ""
     text["auto"] += "Proc:" + str(e["AutoProcessor"]) + ", " if e["AutoProcessor"] else ""
-    text["auto"] += "Dislodge, " if e["AutoDislodge"] else ""
+    text["auto"] += "Dislodge: " + str(e["AutoDislodge"]) + ", " if e["AutoDislodge"] else ""
     text["auto"] += "AStop, " if e["AStop"] else ""
     text["auto"] += str(e["AutoTimer"]) + " Sec, " if e["AutoTimer"] else ""
     text["auto"] = text["auto"][:-2]
@@ -263,7 +263,7 @@ def generateTeamText(e):
     text["teleop1"] += CoralPickup(e["TeleCoralPickup"]).name + ", " if e["TeleCoralPickup"] else ""
     text["teleop1"] += "Net:" + str(e["TeleNet"]) + ", " if e["TeleNet"] else ""
     text["teleop1"] += "Proc:" + str(e["TeleProcessor"]) + ", " if e["TeleProcessor"] else ""
-    text["teleop1"] += "Dislodge, " if e["TeleDislodge"] else ""
+    text["teleop1"] += "Dislodge: " + str(e["TeleDislodge"]) + ", " if e["TeleDislodge"] else ""
     text["teleop1"] = text["teleop1"][:-2]
 
     text["teleop2"] += "Cross, " if e["CrossedField"] else ""
