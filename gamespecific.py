@@ -23,6 +23,7 @@ class CoralPickup(Enum):
     No = 0
     Ground = 1
     Cstation = 2
+    CStation = 2
     Both = 3
 
 class Endgame(Enum):
