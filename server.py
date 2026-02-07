@@ -31,7 +31,6 @@ class ScoutServer(object):
     def index(self, m="", e=""):
         # Add auth value to session if not present
         sessionCheck()
-
         # Handle event selection. When the event is changed, a POST request is sent here.
         if e != "":
             cherrypy.session["event"] = e
@@ -1507,17 +1506,21 @@ def dict_factory(cursor, row):
 
 def main():
     # Determine which config to launch based on command line args
-    if len(sys.argv) > 1:
-        if sys.argv[1] == "-local":
-            print("Starting local server")
-            server.localInstance = True
-            cherrypy.quickstart(ScoutServer(), "/", localConf)
+    try:
+        if len(sys.argv) > 1:
+            if sys.argv[1] == "-local":
+                print("Starting local server")
+                server.localInstance = True
+                cherrypy.quickstart(ScoutServer(), "/", localConf)
+            else:
+                print("Starting remote server")
+                cherrypy.quickstart(ScoutServer(), "/", remoteConf)
         else:
             print("Starting remote server")
             cherrypy.quickstart(ScoutServer(), "/", remoteConf)
-    else:
-        print("Starting remote server")
-        cherrypy.quickstart(ScoutServer(), "/", remoteConf)
+    except Exception as e:
+        print("Fatal error: ", e.args)
+        input("Press any key to exit")
 
 
 if __name__ == "__main__":

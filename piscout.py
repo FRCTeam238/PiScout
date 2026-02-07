@@ -32,30 +32,34 @@ class PiScout:
     # Requires a function "processSheet" which contains the sheet configuration
     # Loops indefinitely and triggers a response whenever a new sheet is added
     def __init__(self):
-        print("PiScout Starting")
-        self.sheet = None
-        self.display = None
-        self.matchData = dict(game.SCOUT_FIELDS)
-        self.pitData = dict(game.PIT_SCOUT_FIELDS)
-        self.labels = []
-        self.type = 0
-        self.shift = 0
+        try:
+            print("PiScout Starting")
+            self.sheet = None
+            self.display = None
+            self.matchData = dict(game.SCOUT_FIELDS)
+            self.pitData = dict(game.PIT_SCOUT_FIELDS)
+            self.labels = []
+            self.type = 0
+            self.shift = 0
 
-        # Uses relative path to Sheets subdirectory where scans are stored
-        f = set(os.listdir("Sheets"))
-        while True:
-            sleep(0.25)
-            files = set(os.listdir("Sheets"))  # grabs all file names as a set
-            added = files - f  # check if any files were added
-            for file in added:
-                if ".csv" in file:
-                    retval = self.processCSV("Sheets/" + file)
-                    # If loading succeeds, process and add to the list of existing files, if the loading has a critical failure, add the file to the list. If the load has a temporary failure, retval is 0 and the file will be reprocessed on the next pass
-                    if retval == 1:
-                        #game.processSheet(self)
-                        f.add(file)
-                    elif retval == -1:
-                        f.add(file)
+            # Uses relative path to Sheets subdirectory where scans are stored
+            f = set(os.listdir("Sheets"))
+            while True:
+                sleep(0.25)
+                files = set(os.listdir("Sheets"))  # grabs all file names as a set
+                added = files - f  # check if any files were added
+                for file in added:
+                    if ".csv" in file:
+                        retval = self.processCSV("Sheets/" + file)
+                        # If loading succeeds, process and add to the list of existing files, if the loading has a critical failure, add the file to the list. If the load has a temporary failure, retval is 0 and the file will be reprocessed on the next pass
+                        if retval == 1:
+                            #game.processSheet(self)
+                            f.add(file)
+                        elif retval == -1:
+                            f.add(file)
+        except Exception as e:
+            print("Fatal error: ", e.args)
+            input("Press any key to exit")
 
     def processCSV(self, filepath):
         print("Loading a new file: " + filepath)
