@@ -105,7 +105,7 @@ class ScoutServer(object):
         if list:
             conn = sql.connect(self.datapath())
             conn.row_factory = sql.Row
-            pattern = re.compile("team\[\]=(\d*)")
+            pattern = re.compile(r"team\[\]=(\d*)")
             pickList = pattern.findall(list)
             for order, team in enumerate(pickList):
                 sqlCommand = "UPDATE Picklist SET list=?, rank=? WHERE TeamNumber=? AND EventCode=?"
@@ -116,7 +116,7 @@ class ScoutServer(object):
         if dnp:
             conn = sql.connect(self.datapath())
             conn.row_factory = sql.Row
-            pattern = re.compile("team\[\]=(\d*)")
+            pattern = re.compile(r"team\[\]=(\d*)")
             dnpList = pattern.findall(dnp)
             for order, team in enumerate(dnpList):
                 sqlCommand = "UPDATE Picklist SET list=?, rank=? WHERE TeamNumber=? AND EventCode=?"
@@ -127,7 +127,7 @@ class ScoutServer(object):
         if unassigned:
             conn = sql.connect(self.datapath())
             conn.row_factory = sql.Row
-            pattern = re.compile("team\[\]=(\d*)")
+            pattern = re.compile(r"team\[\]=(\d*)")
             orderedList = pattern.findall(unassigned)
             for order, team in enumerate(orderedList):
                 sqlCommand = "UPDATE Picklist SET list=?, rank=? WHERE TeamNumber=? AND EventCode=?"
