@@ -78,54 +78,58 @@ class PiScout:
                 print(str(total-1) + " Total records")
                 processed = 0
                 for row in reader:
-                    if skip == 0:
-                        skip = 1
-                        continue
-                    processed += 1
-                    if(processed %10 == 0):
-                        print("Processed " + str(processed) + " of " + str(total) + " records")
-                    matchData = dict(game.SCOUT_FIELDS)
-                    comment = ""
-                    for num, key in enumerate(game.IMPORT_FIELDS):
-                        if row[num]:
-                            if (key in matchData) or key in ["Endgame", "DefenseDefended", "Comments"]:
-                                if key == "StartingPosition":
-                                    matchData[key] = game.StartingPosition[row[num]].value
-                                elif key in ["NoShow", "Leave", "AStop", "CrossedField", "Disabled", "Coop"]:
-                                    matchData[key] = game.Boolean[row[num]].value
-                                elif key == "CagePosition":
-                                    matchData[key] = game.CagePosition[row[num]].value
-                                elif key in ["AutoCoralPickup", "TeleCoralPickup"]:
-                                    matchData[key] = game.CoralPickup[row[num]].value
-                                elif key == "Endgame":
-                                    temp = game.Endgame[row[num]].value
-                                    if temp == -1:
-                                        matchData["FailedClimb"] = 1
+                    try:
+                        if skip == 0:
+                            skip = 1
+                            continue
+                        processed += 1
+                        if(processed %10 == 0):
+                            print("Processed " + str(processed) + " of " + str(total) + " records")
+                        matchData = dict(game.SCOUT_FIELDS)
+                        comment = ""
+                        for num, key in enumerate(game.IMPORT_FIELDS):
+                            if row[num]:
+                                if (key in matchData) or key in ["Endgame", "DefenseDefended", "Comments"]:
+                                    if key == "StartingPosition":
+                                        matchData[key] = game.StartingPosition[row[num]].value
+                                    elif key in ["NoShow", "Leave", "AStop", "CrossedField", "Disabled", "Coop"]:
+                                        matchData[key] = game.Boolean[row[num]].value
+                                    elif key == "CagePosition":
+                                        matchData[key] = game.CagePosition[row[num]].value
+                                    elif key in ["AutoCoralPickup", "TeleCoralPickup"]:
+                                        matchData[key] = game.CoralPickup[row[num]].value
+                                    elif key == "Endgame":
+                                        temp = game.Endgame[row[num]].value
+                                        if temp == -1:
+                                            matchData["FailedClimb"] = 1
+                                        else:
+                                            matchData["Barge"] = temp
+                                    elif key == "DefenseDefended":
+                                        temp = game.Defense[row[num]].value
+                                        if temp in [1, 3]:
+                                            matchData["Defense"] = 1
+                                        if temp in [2, 3]:
+                                            matchData["Defended"] = 1
+                                    elif key == "Card":
+                                        matchData[key] = game.Cards[row[num]].value
+                                    elif key == "Comments":
+                                        comment = row[num]
                                     else:
-                                        matchData["Barge"] = temp
-                                elif key == "DefenseDefended":
-                                    temp = game.Defense[row[num]].value
-                                    if temp in [1, 3]:
-                                        matchData["Defense"] = 1
-                                    if temp in [2, 3]:
-                                        matchData["Defended"] = 1
-                                elif key == "Card":
-                                    matchData[key] = game.Cards[row[num]].value
-                                elif key == "Comments":
-                                    comment = row[num]
-                                else:
-                                    matchData[key] = round(float(row[num]))
-                    requests.post(
-                        "http://127.0.0.1:8000/submit",
-                        data={
-                            "event": CURRENT_EVENT,
-                            "data": str(matchData),
-                            "auth": serverinfo.AUTH,
-                            "comment": comment
-                        },
-                    )
-                    with open("queue.txt", "a+") as file:
-                        file.write(str(matchData) + "\n")
+                                        matchData[key] = round(float(row[num]))
+                        requests.post(
+                            "http://127.0.0.1:8000/submit",
+                            data={
+                                "event": CURRENT_EVENT,
+                                "data": str(matchData),
+                                "auth": serverinfo.AUTH,
+                                "comment": comment
+                            },
+                        )
+                        with open("queue.txt", "a+") as file:
+                            file.write(str(matchData) + "\n")
+                    except Exception as e:
+                        print("Error processing line " + str(processed+1))
+                        print (e.message, e.args)
         else:
             with open(filepath, "r") as file:
                 if os.path.isfile("pitQueue.txt"):
