@@ -56,6 +56,16 @@ class ScoutServer(object):
                 )
                     .fetchall()
             )
+            if len(teams) == 0:
+                self.getTeamsTBA()
+            teams = (
+                conn.cursor()
+                .execute(
+                    "SELECT DISTINCT TeamNumber from Participation WHERE EventCode=?",
+                    (getEvent(),),
+                )
+                .fetchall()
+            )
             data = []
             for i, team in enumerate(teams):
                 averages = getAggregateData(Team=str(team[0]), Mode="Averages")
@@ -1167,6 +1177,32 @@ class ScoutServer(object):
         if "event" not in cherrypy.session:
             cherrypy.session["event"] = CURRENT_EVENT
         return cherrypy.session["event"]
+
+    def getTeamsTBA(self):
+        headers = {
+            "X-TBA-Auth-Key": "n8QdCIF7LROZiZFI7ymlX0fshMBL15uAzEkBgtP1JgUpconm2Wf49pjYgbYMstBF"
+        }
+        t = requests.get(
+            "http://www.thebluealliance.com/api/v3/event/{0}/teams/simple".format(
+                getEvent()
+            ),
+            params=headers,
+        )
+        if t.text != "[]":
+            t = t.json()
+        teams = []
+        self.database_exists()
+        conn = sql.connect(self.datapath())
+        conn.row_factory = sql.Row
+        cursor = conn.cursor()
+        for team in t:
+            cursor.execute(
+                "INSERT OR IGNORE INTO Participation VALUES (NULL,?,?)",
+                (team["team_number"], getEvent()),
+            )
+        conn.commit()
+        conn.close()
+
 
     def getMatches(self, event, team=""):
         headers = {
