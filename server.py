@@ -1435,7 +1435,7 @@ def getPitDisplayData(team):
     sqlCommand += " FROM Teams WHERE TeamNumber=?"
     sql_pit = cursor.execute(sqlCommand, (team,)).fetchall()
     retVal = dict(game.PIT_DISPLAY_FIELDS)
-    if len(sql_pit):
+    if len(sql_pit) and sql_pit[0]["Drivetrain"] != None:
         for key in retVal:
             retVal[key] = sql_pit[0][key]
         retVal["Drivetrain"] = game.Drivetrain(retVal["Drivetrain"]).name
