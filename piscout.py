@@ -91,35 +91,38 @@ class PiScout:
                             print("Processed " + str(processed) + " of " + str(total) + " records")
                         matchData = dict(game.SCOUT_FIELDS)
                         comment = ""
-                        for num, key in enumerate(game.IMPORT_FIELDS):
+                        for num, key in enumerate(game.IMPORT_COLUMNS):
                             if row[num]:
-                                if (key in matchData) or key in ["Endgame", "DefenseDefended", "Comments"]:
-                                    if key == "StartingPosition":
-                                        matchData[key] = game.StartingPosition[row[num]].value
-                                    elif key in ["NoShow", "Leave", "AStop", "CrossedField", "Disabled", "Coop"]:
-                                        matchData[key] = game.Boolean[row[num]].value
-                                    elif key == "CagePosition":
-                                        matchData[key] = game.CagePosition[row[num]].value
-                                    elif key in ["AutoCoralPickup", "TeleCoralPickup"]:
-                                        matchData[key] = game.CoralPickup[row[num]].value
-                                    elif key == "Endgame":
-                                        temp = game.Endgame[row[num]].value
-                                        if temp == -1:
-                                            matchData["FailedClimb"] = 1
-                                        else:
-                                            matchData["Barge"] = temp
-                                    elif key == "DefenseDefended":
-                                        temp = game.Defense[row[num]].value
-                                        if temp in [1, 3]:
-                                            matchData["Defense"] = 1
-                                        if temp in [2, 3]:
-                                            matchData["Defended"] = 1
-                                    elif key == "Card":
-                                        matchData[key] = game.Cards[row[num]].value
-                                    elif key == "Comments":
-                                        comment = row[num]
-                                    else:
-                                        matchData[key] = round(float(row[num]))
+                                if key in ["EventCode", "Scouter", "Robot"]:
+                                    continue
+                                elif key == "StartingPosition":
+                                    matchData[key] = game.StartingPosition[row[num].strip()].value
+                                elif key in ["NoShow", "AStop", "OutpostPass", "Disabled"]:
+                                    matchData[key] = game.Boolean[row[num].strip()].value
+                                elif key in ["AutoFuelPickup", "AutoShootingLocation", "TeleFuelPickup", "TeleShootingLocation"]:
+                                    for value in row[num].split(","):
+                                        if value.strip() != "No":
+                                            matchData[key + value.strip()] = True
+                                elif key == "AutoHoardPass":
+                                    matchData[key] = game.AutoHoardPass[row[num].strip()].value
+                                elif key in ["AutoCrossField", "TeleCrossField"]:
+                                    matchData[key] = game.CrossField[row[num].strip()].value
+                                elif key == "AutoClimb":
+                                    matchData[key] = game.AutoClimb[row[num].strip()].value
+                                elif key == "TeleRobotAction":
+                                    for value in row[num].split(","):
+                                        if value.strip() != "No":
+                                            matchData[value.strip()] = True
+                                elif key == "ClimbPosition":
+                                    matchData[key] = game.ClimbPosition[row[num].strip()].value
+                                elif key == "ClimbLevel":
+                                    matchData[key] = game.ClimbLevel[row[num].strip()].value
+                                elif key == "Card":
+                                    matchData[key] = game.Cards[row[num].strip()].value
+                                elif key == "Comments":
+                                    comment = row[num]
+                                else:
+                                    matchData[key] = round(float(row[num].strip()))
                         requests.post(
                             "http://127.0.0.1:8000/submit",
                             data={
@@ -133,7 +136,7 @@ class PiScout:
                             file.write(str(matchData) + "\n")
                     except Exception as e:
                         print("Error processing line " + str(processed+1))
-                        print (e.message, e.args)
+                        print (e.args)
         else:
             with open(filepath, "r") as file:
                 if os.path.isfile("pitQueue.txt"):
@@ -146,21 +149,25 @@ class PiScout:
                         continue
                     pitData = dict(game.PIT_SCOUT_FIELDS)
                     comment = ""
-                    for num, key in enumerate(game.PIT_IMPORT_FIELDS):
+                    for num, key in enumerate(game.PIT_IMPORT_COLUMNS):
                         if row[num]:
-                            if (key in pitData) or key in ["Comments"]:
-                                if key in ["PitOrganization", "WiringQuality", "BumperQuality"]:
-                                    pitData[key] = game.Rating[row[num]].value
-                                elif key == "Drivetrain":
+                            if (key in pitData) or key in ["Comments", "ShootLocation", "ClimbPosition"]:
+                                if key == "Drivetrain":
                                     pitData[key] = game.Drivetrain[row[num]].value
                                 elif key == "Comments":
                                     comment = row[num]
                                 elif key in ["TeamNumber", "Batteries", "Weight", "Width"]:
                                     pitData[key] = row[num]
-                                elif key == "Pickup":
-                                    pitData[key] = game.CoralPickup[row[num]].value
-                                else:
-                                    pitData[key] = game.Boolean[row[num]].value
+                                elif key == "FuelPickup":
+                                    pitData[key] = game.FuelPickup[row[num]].value
+                                elif key == "BumpTrench":
+                                    pitData[key] = game.BumpTrench[row[num]].value
+                                elif key == "ClimbLevel":
+                                    pitData[key] = game.ClimbLevel[row[num]].value
+                                elif key in ["ShootLocation", "ClimbPosition"]:
+                                    for value in row[num].split(","):
+                                        if value.strip() != "No":
+                                            pitData[key + value.strip()] = True
                     requests.post(
                         "http://127.0.0.1:8000/submit",
                         data={

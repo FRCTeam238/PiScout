@@ -421,12 +421,12 @@ class ScoutServer(object):
         if len(sql_pit):
             pit = sql_pit[0]
             pit_dict = dict(sql_pit[0])
-            if pit["PitOrganization"] is not None:
-                for key in ["PitOrganization", "WiringQuality", "BumperQuality"]:
-                    pit_dict[key] = game.Rating(pit[key]).name
-                pit_dict["Pickup"] = game.CoralPickup(pit["Pickup"]).name
-                pit_dict["Drivetrain"] = game.CoralPickup(pit["Pickup"]).name
-                for key in ["L1", "L2", "L3", "L4", "Net", "Proc", "HP", "Shallow", "Deep"]:
+            if pit["Batteries"] is not None:
+                pit_dict["Drivetrain"] = game.Drivetrain(pit["Drivetrain"]).name
+                pit_dict["FuelPickup"] = game.FuelPickup(pit["FuelPickup"]).name
+                pit_dict["BumpTrench"] = game.BumpTrench(pit["BumpTrench"]).name
+                pit_dict["ClimbLevel"] = game.ClimbLevel(pit["ClimbLevel"]).name
+                for key in ["ShootLocationClose", "ShootLocationMiddle", "ShootLocationFar", "ClimbPositionHalf", "ClimbPositionMiddle", "ClimbPositionNub"]:
                     pit_dict[key] = game.Boolean(pit[key]).name
         else:
             pit_dict = 0
@@ -929,12 +929,14 @@ class ScoutServer(object):
                 )
                 tempString = "INSERT INTO ScoutRecords VALUES (?," + ",".join([str(a) for a in d.values()])
                 tempString += ",?)"
-                cursor.execute(
-                    tempString,
-                    (event, comment),
-                )
-                conn.commit()
-                conn.close()
+                try:
+                    cursor.execute(
+                        tempString,
+                        (event, comment),
+                    )
+                    conn.commit()
+                finally:
+                    conn.close()
 
                 return ""
             elif pitData:
@@ -1432,11 +1434,14 @@ def getPitDisplayData(team):
     sqlCommand = sqlCommand[:-2]
     sqlCommand += " FROM Teams WHERE TeamNumber=?"
     sql_pit = cursor.execute(sqlCommand, (team,)).fetchall()
+    retVal = dict(game.PIT_DISPLAY_FIELDS)
     if len(sql_pit):
-        return sql_pit[0]
-    else:
-        return dict(game.PIT_DISPLAY_FIELDS)
-
+        for key in retVal:
+            retVal[key] = sql_pit[0][key]
+        retVal["Drivetrain"] = game.Drivetrain(retVal["Drivetrain"]).name
+        retVal["BumpTrench"] = game.BumpTrench(retVal["BumpTrench"]).name
+        retVal["ClimbLevel"] = game.ClimbLevel(retVal["ClimbLevel"]).name
+    return retVal
 
 def getMode():
     if "mode" not in cherrypy.session:
