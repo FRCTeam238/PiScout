@@ -156,11 +156,10 @@ DISPLAY_FIELDS = {
     "Team": 0,
     "Points": 0,
     "AutoPoints": 0,
-    "AutoFuel": 0,
     "TelePoints": 0,
-    "ClimbLevel": 0,
     "TelePassed": 0,
     "Defense": 0,
+    "Disabled": 0,
 }
 
 HIDDEN_DISPLAY_FIELDS = {}
