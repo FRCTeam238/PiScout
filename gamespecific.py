@@ -80,6 +80,12 @@ class BumpTrench(Enum):
     Trench = 2
     Both = 3
 
+class PassType(Enum):
+    No = 0
+    Push = 1
+    Shoot = 2
+    Both = 3
+
 #The columns in the QRScout CSV
 IMPORT_COLUMNS = {
     "EventCode": "",
@@ -89,10 +95,9 @@ IMPORT_COLUMNS = {
     "Team": 0,
     "StartingPosition": "",
     "NoShow": False,
-    "AutoFuel": 0,
     "AutoFuelPickup": "",
-    "AutoShootingLocation": "",
-    "AutoHoardPass": "",
+    "AutoFuel": 0,
+    "AutoPassed": 0,
     "AutoCrossField": "",
     "AutoClimb": "",
     "AStop": False,
@@ -102,9 +107,13 @@ IMPORT_COLUMNS = {
     "TeleShootingLocation": "",
     "OutpostPass": "",
     "TeleCrossField": "",
-    "TeleRobotAction": "",
+    "PassingMethod": "",
     "ClimbPosition": "",
     "ClimbLevel": "",
+    "DriveQuality": 0,
+    "Defense": 0,
+    "DefenseSkill": 0,
+    "Defended": 0,
     "Card": 0,
     "Disabled": False,
     "Comments": ""
@@ -123,7 +132,6 @@ SCOUT_FIELDS = {
     "AutoShootingLocationClose": False,
     "AutoShootingLocationMiddle": False,
     "AutoShootingLocationFar": False,
-    "AutoHoardPass": 0,
     "AutoCrossField": 0,
     "AutoClimb": 0,
     "AStop": False,
@@ -146,7 +154,11 @@ SCOUT_FIELDS = {
     "ClimbLevel": 0,
     "Card": 0,
     "Disabled": False,
-    "Flag": 0
+    "Flag": 0,
+    "AutoPassed": 0,
+    "PassingMethod": 0,
+    "DriveQuality": 0,
+    "DefenseSkill": 0,
 }
 
 # Defines the fields that are stored in the "averages" and similar tables of the database.
@@ -158,6 +170,7 @@ DISPLAY_FIELDS = {
     "AutoPoints": 0,
     "TelePoints": 0,
     "TelePassed": 0,
+    "DriveQuality": 0,
     "Defense": 0,
     "Disabled": 0,
 }
@@ -236,18 +249,13 @@ def getDisplayFieldCreate():
 def generateTeamText(e):
     text = {"auto": "", "teleop1": "", "teleop2": "", "other": ""}
     text["auto"] += "Start: " + StartingPosition(e["StartingPosition"]).name + ", "
-    text["auto"] += "Fuel: " + str(e["AutoFuel"]) + ", " if e["AutoFuel"] else ""
+    text["auto"] += "Scored: " + str(e["AutoFuel"]) + ", " if e["AutoFuel"] else ""
+    text["auto"] += "Passed: " + str(e["AutoPassed"]) + ", " if e["AutoPassed"] else ""
     text["auto"] += "Pickup:" if e["AutoFuelPickupDepot"] or e["AutoFuelPickupNeutralZ"] or e["AutoFuelPickupOutPost"] else ""
     text["auto"] += " Depot" if e["AutoFuelPickupDepot"] else ""
     text["auto"] += " NeutralZ" if e["AutoFuelPickupNeutralZ"] else ""
     text["auto"] += " Outpost" if e["AutoFuelPickupOutPost"] else ""
     text["auto"] += ", " if e["AutoFuelPickupDepot"] or e["AutoFuelPickupNeutralZ"] or e["AutoFuelPickupOutPost"] else ""
-    text["auto"] += "Shoot:" if e["AutoShootingLocationClose"] or e["AutoShootingLocationMiddle"] or e["AutoShootingLocationFar"] else ""
-    text["auto"] += " Close" if e["AutoShootingLocationClose"] else ""
-    text["auto"] += " Middle" if e["AutoShootingLocationMiddle"] else ""
-    text["auto"] += " Far" if e["AutoShootingLocationFar"] else ""
-    text["auto"] += ", " if e["AutoShootingLocationClose"] or e["AutoShootingLocationMiddle"] or e["AutoShootingLocationFar"] else ""
-    text["auto"] += "Hoard: " + AutoHoardPass(e["AutoHoardPass"]).name + ", " if e["AutoHoardPass"] else ""
     text["auto"] += "Cross: " + CrossField(e["AutoCrossField"]).name + ", " if e["AutoCrossField"] else ""
     text["auto"] += AutoClimb(e["AutoClimb"]).name + ", " if e["AutoClimb"] else ""
     text["auto"] = text["auto"][:-2]
@@ -273,13 +281,15 @@ def generateTeamText(e):
     text["teleop1"] = text["teleop1"][:-2]
 
     text["teleop2"] += "Outpost Pass, " if e["OutpostPass"] else ""
+    text["teleop2"] += "PassType: " + PassType(e["PassingMethod"]).name + ", " if e["PassingMethod"] else ""
     text["teleop2"] += "Cross: " + CrossField(e["AutoCrossField"]).name + ", " if e["AutoCrossField"] else ""
-    text["teleop2"] += "Hoard, " if e["Hoard"] else ""
     text["teleop2"] += ClimbLevel(e["ClimbLevel"]).name + " " if e["ClimbLevel"] else ""
     text["teleop2"] += ClimbPosition(e["ClimbPosition"]).name + ", " if e["ClimbPosition"] else ""
     text["teleop2"] = text["teleop2"][:-2]
 
+    text["other"] += "Drive: " + str(e["DriveQuality"]) + ", " if e["DriveQuality"] else ""
     text["other"] += "Defense, " if e["Defense"] else ""
+    text["other"] += "Skill: " + str(e["DefenseSkill"]) + ", " if e["DefenseSkill"] else ""
     text["other"] += "Defended, " if e["Defended"] else ""
     text["other"] += "Disabled, " if e["Disabled"] else ""
     text["other"] += "NoShow, " if e["NoShow"] else ""
