@@ -43,6 +43,7 @@ class ClimbPosition(Enum):
     Middle = 1
     Half = 2
     Nub = 3
+    Failed = -1
 
 class Defense(Enum):
     No = 0
@@ -52,8 +53,8 @@ class Defense(Enum):
 
 class Cards(Enum):
     NoCard = 0
-    Yellow = 1
-    Red = 2
+    YellowCard = 1
+    RedCard = 2
 
 class Rating(Enum):
     No = 0
