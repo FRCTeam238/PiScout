@@ -81,8 +81,8 @@ class PiScout:
                             skip = 1
                             continue
                         processed += 1
-                        if(processed %10 == 0):
-                            print("Processed " + str(processed) + " of " + str(total) + " records")
+                        if((processed-1) %10 == 0):
+                            print("Processed " + str(processed-1) + " of " + str(total-1) + " records")
                         matchData = dict(game.SCOUT_FIELDS)
                         comment = ""
                         for num, key in enumerate(game.IMPORT_COLUMNS):
