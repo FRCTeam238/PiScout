@@ -935,6 +935,17 @@ class ScoutServer(object):
                         (event, comment),
                     )
                     conn.commit()
+                except sql.IntegrityError:
+                    deleteString = "DELETE FROM ScoutRecords WHERE EventCode=? AND Match=? AND Team=?"
+                    cursor.execute(
+                        deleteString,
+                        (event, d['Match'], d['Team'])
+                    )
+                    cursor.execute(
+                        tempString,
+                        (event, comment)
+                    )
+                    conn.commit()
                 finally:
                     conn.close()
 

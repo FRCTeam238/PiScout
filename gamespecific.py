@@ -97,11 +97,11 @@ IMPORT_COLUMNS = {
     "AutoClimb": "",
     "AStop": False,
     "TeleFuelPickup": "",
-    "TeleFuel": 0,
+    "TeleScored": 0,
+    "TelePassed": 0,
     "TeleShootingLocation": "",
     "OutpostPass": "",
     "TeleCrossField": "",
-    "TelePassCycles": 0,
     "TeleRobotAction": "",
     "ClimbPosition": "",
     "ClimbLevel": "",
@@ -132,13 +132,13 @@ SCOUT_FIELDS = {
     "TeleFuelPickupAllianceSide": False,
     "TeleFuelPickupOutPost": False,
     "TeleFuelPickupOpponentSide": False,
-    "TeleFuel": 0,
+    "TeleScored": 0,
+    "TelePassed": 0,
     "TeleShootingLocationClose": False,
     "TeleShootingLocationMiddle": False,
     "TeleShootingLocationFar": False,
     "OutpostPass": False,
     "TeleCrossField": 0,
-    "TelePassCycles": 0,
     "Defense": False,
     "Defended": False,
     "Hoard": False,
@@ -156,10 +156,10 @@ DISPLAY_FIELDS = {
     "Team": 0,
     "Points": 0,
     "AutoPoints": 0,
-    "AutoFuel": 0,
     "TelePoints": 0,
-    "ClimbLevel": 0,
+    "TelePassed": 0,
     "Defense": 0,
+    "Disabled": 0,
 }
 
 HIDDEN_DISPLAY_FIELDS = {}
@@ -214,7 +214,8 @@ CHART_FIELDS = {
     "Points": 0,
     "AutoFuel": 0,
     "AutoClimb": 0,
-    "TeleFuel": 0,
+    "TeleScored": 0,
+    "TelePassed": 0,
     "ClimbLevel": 0,
 }
 
@@ -226,7 +227,7 @@ class SheetType(IntEnum):
 
 def getDisplayFieldCreate():
     retVal = "AutoPoints AS (AutoClimb+AutoFuel) STORED, "
-    retVal += "TelePoints AS (TeleFuel+climbLevel) STORED, "
+    retVal += "TelePoints AS (TeleScored+ClimbLevel) STORED, "
     retVal += "Points AS (AutoPoints+TelePoints) STORED, "
     return retVal
 
@@ -251,8 +252,8 @@ def generateTeamText(e):
     text["auto"] += AutoClimb(e["AutoClimb"]).name + ", " if e["AutoClimb"] else ""
     text["auto"] = text["auto"][:-2]
 
-    text["teleop1"] += "Fuel: " + str(e["TeleFuel"]) + ", " if e["TeleFuel"] else ""
-    text["teleop1"] += "Pass Cycles: " + str(e["TelePassCycles"]) + ", " if e["TelePassCycles"] else ""
+    text["teleop1"] += "Scored: " + str(e["TeleScored"]) + ", " if e["TeleScored"] else ""
+    text["teleop1"] += "Passed: " + str(e["TelePassed"]) + ", " if e["TelePassed"] else ""
     text["teleop1"] += "Pickup:" if e["TeleFuelPickupDepot"] or e["TeleFuelPickupNeutralZ"] or e[
         "TeleFuelPickupOutPost"] or e["TeleFuelPickupAllianceSide"] or e["TeleFuelPickupOpponentSide"] else ""
     text["teleop1"] += " Depot" if e["TeleFuelPickupDepot"] else ""
@@ -321,7 +322,7 @@ def predictScore(event, teams, level="quals"):
 
 
         pointsTotal += entry["Points"]
-        fuelTotal += entry["AutoFuel"] + entry["TeleFuel"]
+        fuelTotal += entry["AutoFuel"] + entry["TeleScored"]
         climbTotal += entry["AutoClimb"]+entry["ClimbLevel"]
 
     retVal = {"score": 0, "RP1": 0, "RP2": 0, "RP3": 0}
