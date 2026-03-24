@@ -53,8 +53,8 @@ class Defense(Enum):
 
 class Cards(Enum):
     NoCard = 0
-    YellowCard = 1
-    RedCard = 2
+    Yellow = 1
+    Red = 2
 
 class Rating(Enum):
     No = 0
