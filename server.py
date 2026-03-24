@@ -57,14 +57,14 @@ class ScoutServer(object):
             )
             if len(teams) == 0:
                 self.getTeamsTBA()
-            teams = (
-                conn.cursor()
-                .execute(
-                    "SELECT DISTINCT TeamNumber from Participation WHERE EventCode=?",
-                    (getEvent(),),
+                teams = (
+                    conn.cursor()
+                    .execute(
+                        "SELECT DISTINCT TeamNumber from Participation WHERE EventCode=?",
+                        (getEvent(),),
+                    )
+                    .fetchall()
                 )
-                .fetchall()
-            )
             data = []
             for i, team in enumerate(teams):
                 averages = getAggregateData(Team=str(team[0]), Mode="Averages")
@@ -344,6 +344,263 @@ class ScoutServer(object):
         events = conn.cursor().execute("SELECT * from Events").fetchall()
         conn.close()
         tmpl = loader.load("picklist.xhtml")
+        page = tmpl.generate(
+            columns=columns,
+            session=cherrypy.session,
+            teams=teamData,
+            dnp=dnpData,
+            picklist=pickListData,
+            auth=auth,
+            events=events,
+        )
+        return page.render("html", doctype="html")
+
+    @cherrypy.expose
+    def picklist2(self, list="", dnp="", unassigned=""):
+        sessionCheck()
+        if not checkAuth(False):
+            raise cherrypy.HTTPError(
+                401, "Not authorized to view picklist. Please log in and try again."
+            )
+
+        if checkAuth(True):
+            auth = "admin"
+        else:
+            auth = "user"
+
+        if list:
+            conn = sql.connect(self.datapath())
+            conn.row_factory = sql.Row
+            pattern = re.compile(r"team\[\]=(\d*)")
+            pickList = pattern.findall(list)
+            for order, team in enumerate(pickList):
+                sqlCommand = "UPDATE Picklist2 SET list=?, rank=? WHERE TeamNumber=? AND EventCode=?"
+                conn.cursor().execute(sqlCommand, ("Pick", order + 1, team, getEvent()))
+            conn.commit()
+            conn.close()
+
+        if dnp:
+            conn = sql.connect(self.datapath())
+            conn.row_factory = sql.Row
+            pattern = re.compile(r"team\[\]=(\d*)")
+            dnpList = pattern.findall(dnp)
+            for order, team in enumerate(dnpList):
+                sqlCommand = "UPDATE Picklist2 SET list=?, rank=? WHERE TeamNumber=? AND EventCode=?"
+                conn.cursor().execute(sqlCommand, ("DNP", order + 1, team, getEvent()))
+            conn.commit()
+            conn.close()
+
+        if unassigned:
+            conn = sql.connect(self.datapath())
+            conn.row_factory = sql.Row
+            pattern = re.compile(r"team\[\]=(\d*)")
+            orderedList = pattern.findall(unassigned)
+            for order, team in enumerate(orderedList):
+                sqlCommand = "UPDATE Picklist2 SET list=?, rank=? WHERE TeamNumber=? AND EventCode=?"
+                conn.cursor().execute(
+                    sqlCommand, ("Unassigned", order + 1, team, getEvent())
+                )
+            conn.commit()
+            conn.close()
+
+        # This section generates the table of averages
+        conn = sql.connect(self.datapath())
+        conn.row_factory = sql.Row
+        columns = {**game.DISPLAY_FIELDS, **game.HIDDEN_DISPLAY_FIELDS}
+
+        sqlAvgCommandBase = "SELECT "
+        sqlMaxCommandBase = "SELECT "
+        for key in columns:
+            sqlMaxCommandBase += "MAX(" + key + ") AS " + key + ", "
+        for key in columns:
+            sqlAvgCommandBase += "round(AVG(" + key + "),2) AS " + key + ", "
+        sqlMaxCommandBase = sqlMaxCommandBase[:-2]
+        sqlAvgCommandBase = sqlAvgCommandBase[:-2]
+        if getMode() == "Variance":
+            sqlCommandBase = sqlMaxCommandBase
+        else:
+            sqlCommandBase = sqlAvgCommandBase
+        noDefense = " AND Defense=0" if getMode() == "NoDefense" else ""
+        eventString = " AND ScoutRecords.EventCode='" + getEvent() + "'"
+
+        joinString = "ScoutRecords join Picklist2 on ScoutRecords.Team=Picklist2.TeamNumber AND ScoutRecords.EventCode=Picklist2.EventCode "
+        listString = " AND LIST='Pick'"
+        table = (
+            " FROM (Select * from (SELECT *, row_number() over (partition by Team order by match desc) as match_rank from "
+            + joinString
+            + "WHERE Flag=0"
+            + eventString
+            + listString
+            + ") where match_rank <= 3)"
+            if getMode() == "Trends"
+            else " FROM " + joinString + "WHERE Flag=0" + eventString + listString
+        )
+        sqlCommand = (
+                sqlCommandBase + table + noDefense + " GROUP BY Team ORDER BY Rank ASC"
+        )
+        pickListData = conn.cursor().execute(sqlCommand).fetchall()
+        if getMode() == "Trends":
+            avgData = (
+                conn.cursor()
+                .execute(
+                    sqlCommandBase
+                    + " FROM ScoutRecords WHERE Flag=0"
+                    + eventString
+                    + " GROUP BY Team ORDER BY Rank ASC",
+                )
+                .fetchall()
+            )
+            latestData = pickListData.copy()
+            pickListData = []
+            for i, row in enumerate(latestData):
+                rowData = dict(columns)
+                for key in rowData:
+                    if key == "Team":
+                        rowData[key] = row[key]
+                    else:
+                        rowData[key] = round(row[key] - avgData[i][key], 2)
+                pickListData.append(rowData)
+        if getMode() == "Variance":
+            avgData = (
+                conn.cursor()
+                .execute(
+                    sqlAvgCommandBase
+                    + " FROM ScoutRecords WHERE Flag=0"
+                    + eventString
+                    + " GROUP BY Team ORDER BY Rank ASC",
+                )
+                .fetchall()
+            )
+            maxData = pickListData.copy()
+            picklistData = []
+            for i, row in enumerate(maxData):
+                rowData = dict(columns)
+                for key in rowData:
+                    if key == "Team":
+                        rowData[key] = row[key]
+                    else:
+                        rowData[key] = round(row[key] - avgData[i][key], 2)
+                pickListData.append(rowData)
+
+        listString = " AND LIST='DNP'"
+        table = (
+            " FROM (Select * from (SELECT *, row_number() over (partition by Team order by match desc) as match_rank from "
+            + joinString
+            + "WHERE Flag=0"
+            + eventString
+            + listString
+            + ") where match_rank <= 3)"
+            if getMode() == "Trends"
+            else " FROM " + joinString + "WHERE Flag=0" + eventString + listString
+        )
+        sqlCommand = (
+                sqlCommandBase + table + noDefense + " GROUP BY Team ORDER BY Rank ASC"
+        )
+        dnpData = conn.cursor().execute(sqlCommand).fetchall()
+        if getMode() == "Trends":
+            avgData = (
+                conn.cursor()
+                .execute(
+                    sqlCommandBase
+                    + " FROM ScoutRecords WHERE Flag=0"
+                    + eventString
+                    + " GROUP BY Team ORDER BY Rank ASC",
+                )
+                .fetchall()
+            )
+            latestData = dnpData.copy()
+            dnpData = []
+            for i, row in enumerate(latestData):
+                rowData = dict(columns)
+                for key in rowData:
+                    if key == "Team":
+                        rowData[key] = row[key]
+                    else:
+                        rowData[key] = round(row[key] - avgData[i][key], 2)
+                dnpData.append(rowData)
+        if getMode() == "Variance":
+            avgData = (
+                conn.cursor()
+                .execute(
+                    sqlAvgCommandBase
+                    + " FROM ScoutRecords WHERE Flag=0"
+                    + eventString
+                    + " GROUP BY Team ORDER BY Rank ASC",
+                )
+                .fetchall()
+            )
+            maxData = dnpData.copy()
+            dnpData = []
+            for i, row in enumerate(maxData):
+                rowData = dict(columns)
+                for key in rowData:
+                    if key == "Team":
+                        rowData[key] = row[key]
+                    else:
+                        rowData[key] = round(row[key] - avgData[i][key], 2)
+                dnpData.append(rowData)
+
+        listString = " AND LIST='Unassigned'"
+        table = (
+            " FROM (Select * from (SELECT *, row_number() over (partition by Team order by match desc) as match_rank from "
+            + joinString
+            + "WHERE Flag=0"
+            + eventString
+            + listString
+            + ") where match_rank <= 3)"
+            if getMode() == "Trends"
+            else " FROM " + joinString + "WHERE Flag=0" + eventString + listString
+        )
+        sqlCommand = (
+                sqlCommandBase + table + noDefense + " GROUP BY Team ORDER BY Rank ASC"
+        )
+        teamData = conn.cursor().execute(sqlCommand).fetchall()
+        if getMode() == "Trends":
+            avgData = (
+                conn.cursor()
+                .execute(
+                    sqlCommandBase
+                    + " FROM ScoutRecords WHERE Flag=0"
+                    + eventString
+                    + " GROUP BY Team ORDER BY Rank ASC",
+                )
+                .fetchall()
+            )
+            latestData = teamData.copy()
+            teamData = []
+            for i, row in enumerate(latestData):
+                rowData = dict(columns)
+                for key in rowData:
+                    if key == "Team":
+                        rowData[key] = row[key]
+                    else:
+                        rowData[key] = round(row[key] - avgData[i][key], 2)
+                teamData.append(rowData)
+        if getMode() == "Variance":
+            avgData = (
+                conn.cursor()
+                .execute(
+                    sqlAvgCommandBase
+                    + " FROM ScoutRecords WHERE Flag=0"
+                    + eventString
+                    + " GROUP BY Team ORDER BY Rank ASC",
+                )
+                .fetchall()
+            )
+            maxData = teamData.copy()
+            teamData = []
+            for i, row in enumerate(maxData):
+                rowData = dict(columns)
+                for key in rowData:
+                    if key == "Team":
+                        rowData[key] = row[key]
+                    else:
+                        rowData[key] = round(row[key] - avgData[i][key], 2)
+                teamData.append(rowData)
+
+        events = conn.cursor().execute("SELECT * from Events").fetchall()
+        conn.close()
+        tmpl = loader.load("picklist2.xhtml")
         page = tmpl.generate(
             columns=columns,
             session=cherrypy.session,
@@ -678,6 +935,7 @@ class ScoutServer(object):
             prevEvent = 0
             teamData = []
             teamData.append(getPitDisplayData(n))
+
             if len(entries) < 3:
                 seasonEntries = cursor.execute(
                     "SELECT * FROM ScoutRecords WHERE Team=? ORDER BY Match DESC", (n,)
