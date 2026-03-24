@@ -1185,6 +1185,10 @@ class ScoutServer(object):
                     "INSERT OR IGNORE INTO Picklist(EventCode,TeamNumber,List) VALUES(?,?,?)",
                     (event, (d["Team"]), "Unassigned"),
                 )
+                cursor.execute(
+                    "INSERT OR IGNORE INTO Picklist2(EventCode,TeamNumber,List) VALUES(?,?,?)",
+                    (event, (d["Team"]), "Unassigned"),
+                )
                 tempString = "INSERT INTO ScoutRecords VALUES (?," + ",".join([str(a) for a in d.values()])
                 tempString += ",?)"
                 try:
