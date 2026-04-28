@@ -14,6 +14,15 @@ class StartingPosition(Enum):
     Tower = 2
     OutPost = 3
 
+class StartingPositionBucks(Enum):
+    No = 0
+    NS = 0
+    OT = 1
+    OB = 1
+    H = 2
+    DB = 3
+    DT = 3
+
 class AutoHoardPass(Enum):
     No = 0
     Pass = 1
@@ -31,6 +40,11 @@ class AutoClimb(Enum):
     Failed = -1
     Climbed = 15
 
+class AutoClimbBucks(Enum):
+    No = 0
+    Yes = 15
+    F = -1
+
 class ClimbLevel(Enum):
     NoAttempt = 0
     L1 = 10
@@ -38,12 +52,25 @@ class ClimbLevel(Enum):
     L3 = 30
     Failed = -1
 
+class ClimbLevelBucks(Enum):
+    No = 0
+    L1 = 10
+    L2 = 20
+    L3 = 30
+    F = -1
+
 class ClimbPosition(Enum):
     No = 0
     Middle = 1
     Half = 2
     Nub = 3
     Failed = -1
+
+class ClimbPositionBucks(Enum):
+    No = 0
+    Mid = 1
+    Out = 2
+    Dep = 2
 
 class Defense(Enum):
     No = 0
@@ -118,6 +145,54 @@ IMPORT_COLUMNS = {
     "Card": 0,
     "Disabled": False,
     "Comments": ""
+}
+
+IMPORT_COLUMNS_BUCKS = {
+    "Scouter": "",
+    "DS": "",
+    "Match": "",
+    "Team": 0,
+    "StartingPosition": "",
+    "NoShow": False,
+    "Cycles": "",
+    "CycleTimestamps": "",
+    "Depot": "",
+    "DepotTimestamps": "",
+    "Outpost": "",
+    "OutpostTimestamps": "",
+    "Neutral": "",
+    "NeutralTimestamps": "",
+    "Passing": "",
+    "PassingTimestamps": "",
+    "Faffing": "",
+    "FaffingTimestamps": "",
+    "AutoFuel": 0,
+    "AutoClimb": "",
+    "AutoClimbLocation": "",
+    "MidLine": "",
+    "TeleCycles": "",
+    "TeleCyclesTimes": "",
+    "TelePassing": "",
+    "TelePassingTimes": "",
+    "Defense": 0,
+    "DefenseTimes": "",
+    "TelePassing2": "",
+    "TelePassingTimes2": "",
+    "TeleFaffing": "",
+    "TeleFaffingTimes": "",
+    "TeleScored": "",
+    "ClimbLevel": "",
+    "ClimbPosition": "",
+    "ClimbTime": "",
+    "Defended": False,
+    "MechIssue": False,
+    "Disabled": False,
+    "Tipped": False,
+    "DriveQuality": 0,
+    "DefenseSkill": 0,
+    "Tags": "",
+    "Comments": "",
+    "Version": ""
 }
 
 # Defines the fields stored in the "Scout" table of the database. This database stores the record for each match scan

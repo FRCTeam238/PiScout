@@ -85,14 +85,14 @@ class PiScout:
                             print("Processed " + str(processed-1) + " of " + str(total-1) + " records")
                         matchData = dict(game.SCOUT_FIELDS)
                         comment = ""
-                        for num, key in enumerate(game.IMPORT_COLUMNS):
+                        for num, key in enumerate(game.IMPORT_COLUMNS_BUCKS):
                             if row[num]:
-                                if key in ["EventCode", "Scouter", "Robot"]:
-                                    continue
-                                elif key == "StartingPosition":
-                                    matchData[key] = game.StartingPosition[row[num].strip()].value
-                                elif key in ["NoShow", "AStop", "OutpostPass", "Disabled", "Defense", "Defended"]:
+                                if key == "StartingPosition":
+                                    matchData[key] = game.StartingPositionBucks[row[num].strip()].value
+                                elif key in ["NoShow", "AStop", "OutpostPass", "Disabled", "Defended"]:
                                     matchData[key] = game.Boolean[row[num].strip()].value
+                                elif key == "Defense":
+                                    matchData[key] = 1 if float(row[num].strip())>0 else 0
                                 elif key in ["AutoFuelPickup", "AutoShootingLocation", "TeleFuelPickup", "TeleShootingLocation"]:
                                     for value in row[num].split(","):
                                         if value.strip() != "No":
@@ -102,22 +102,22 @@ class PiScout:
                                 elif key in ["AutoCrossField", "TeleCrossField"]:
                                     matchData[key] = game.CrossField[row[num].strip()].value
                                 elif key == "AutoClimb":
-                                    matchData[key] = game.AutoClimb[row[num].strip()].value
+                                    matchData[key] = game.AutoClimbBucks[row[num].strip()].value
                                 elif key == "TeleRobotAction":
                                     for value in row[num].split(","):
                                         if value.strip() != "No":
                                             matchData[value.strip()] = True
                                 elif key == "ClimbPosition":
-                                    matchData[key] = game.ClimbPosition[row[num].strip()].value
+                                    matchData[key] = game.ClimbPositionBucks[row[num].strip()].value
                                 elif key == "ClimbLevel":
-                                    matchData[key] = game.ClimbLevel[row[num].strip()].value
+                                    matchData[key] = game.ClimbLevelBucks[row[num].strip()].value
                                 elif key == "Card":
                                     matchData[key] = game.Cards[row[num].strip()].value
                                 elif key == "Comments":
                                     comment = row[num]
                                 elif key == "PassingMethod":
                                     matchData[key] = game.PassType[row[num].strip()].value
-                                else:
+                                elif key in ["AutoFuel", "TeleScored", "DriveQuality", "DefenseSkill", "Match", "Team"]:
                                     matchData[key] = round(float(row[num].strip()))
                         requests.post(
                             "http://127.0.0.1:8000/submit",
