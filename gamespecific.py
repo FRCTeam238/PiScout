@@ -338,9 +338,9 @@ def predictScore(event, teams, level="quals"):
 
     retVal = {"score": 0, "RP1": 0, "RP2": 0, "RP3": 0}
 
-    if fuelTotal > 100:
-        retVal["RP1"] = 1
     if fuelTotal > 360:
+        retVal["RP1"] = 1
+    if fuelTotal > 500:
         retVal["RP2"] = 1
     if climbTotal > 50:
         retVal["RP3"] = 1
